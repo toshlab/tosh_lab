@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* デザイン決定案（Aのレイアウト × Bの配色）の色とフォント */
+@theme {
+    --font-sans: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+
+    --color-paper: #F7F5F0;
+    --color-band: #EFEBE2;
+    --color-ink: #1C1C1C;
+    --color-body: #444444;
+    --color-muted: #5C5A55;
+    --color-line: #DAD6CC;
+    --color-placeholder: #E8E4DA;
+    --color-field: #C9C4B8;
+
+    --color-accent: #2E6B4E;
+    --color-accent-dark: #1F4C37;
+    --color-accent-soft: #E1ECE5;
+
+    --color-sample: #6B4510;
+    --color-sample-soft: #F4ECD9;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 5rem;
+    }
+
+    body {
+        @apply bg-paper font-sans text-ink leading-[1.8] antialiased;
+    }
+
+    a {
+        @apply text-accent transition-colors hover:text-accent-dark;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-accent;
+    }
+}
+
+@layer components {
+    .section {
+        @apply mx-auto max-w-[1120px] px-6 pt-24;
+    }
+
+    .eyebrow {
+        @apply m-0 text-[13px] font-bold tracking-[0.12em] text-accent;
+    }
+
+    .section-title {
+        @apply mt-1 mb-10 text-[26px] font-bold md:text-[30px];
+    }
+
+    .card {
+        @apply rounded-lg border border-line bg-white;
+    }
+
+    .btn-primary {
+        @apply inline-block rounded-md bg-accent px-7 py-3.5 text-[15px] font-medium text-white no-underline hover:bg-accent-dark hover:text-white;
+    }
+
+    .btn-secondary {
+        @apply inline-block rounded-md border border-accent bg-white px-7 py-[13px] text-[15px] font-medium text-accent no-underline hover:bg-accent-soft;
+    }
+
+    .tag {
+        @apply rounded bg-band px-2.5 py-0.5 text-xs text-body;
+    }
+
+    .field {
+        @apply w-full rounded-md border border-field bg-white p-3 font-normal text-ink;
+    }
+
+    /* ブログ本文（Markdown）の見た目 */
+    .prose-post {
+        @apply text-[16px] leading-[1.9] text-body;
+    }
+    .prose-post h2 {
+        @apply mt-12 mb-4 border-b border-line pb-2 text-[22px] font-bold text-ink;
+    }
+    .prose-post h3 {
+        @apply mt-8 mb-3 text-[18px] font-bold text-ink;
+    }
+    .prose-post p {
+        @apply my-5;
+    }
+    .prose-post ul {
+        @apply my-5 list-disc pl-6;
+    }
+    .prose-post ol {
+        @apply my-5 list-decimal pl-6;
+    }
+    .prose-post li {
+        @apply my-1;
+    }
+    .prose-post a {
+        @apply underline underline-offset-2;
+    }
+    .prose-post blockquote {
+        @apply my-6 border-l-4 border-line pl-4 text-muted;
+    }
+    .prose-post code {
+        @apply rounded bg-band px-1.5 py-0.5 text-[14px] text-ink;
+    }
+    .prose-post pre {
+        @apply my-6 overflow-x-auto rounded-lg bg-ink p-4 text-[14px] leading-relaxed text-white;
+    }
+    .prose-post pre code {
+        @apply bg-transparent p-0 text-white;
+    }
+    .prose-post img {
+        @apply my-6 max-w-full rounded-lg;
+    }
+    .prose-post table {
+        @apply my-6 block w-full overflow-x-auto text-[14px];
+    }
+    .prose-post th,
+    .prose-post td {
+        @apply border border-line px-3 py-2 text-left;
+    }
+}
