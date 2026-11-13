@@ -25,3 +25,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# デザインの参考に使う他人のサイトのスクリーンショット（公開しない）
+/docs/design/reference/

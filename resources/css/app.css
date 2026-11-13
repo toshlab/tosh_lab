@@ -5,25 +5,146 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-/* デザイン決定案（Aのレイアウト × Bの配色）の色とフォント */
+/*
+ * デザインの土台（docs/design/design-system.md）
+ *
+ * 色は CSS 変数で持ち、ライト／ダークで中身だけを入れ替える。
+ * Tailwind のクラス名（bg-bg、text-ink など）は1つのままで、テーマに合わせて色が変わる。
+ *
+ * テーマの決まり方：
+ * 1. <head> のスクリプトが data-theme="light|dark" を付ける（保存した選択 → なければOSの設定）
+ * 2. JavaScript が動かないときは data-theme が付かないので、@media でOSの設定に従う
+ */
+
+/* dark: は data-theme に合わせる（どうしても必要な所だけで使う） */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+    color-scheme: light;
+
+    --bg: #ffffff;
+    --surface: #f4f5f4;
+    --ink: #0a0a0a;
+    --body: #2b2b2b;
+    --muted: #5c5c5c;
+    --line: #e6e6e6;
+    --field: #cfcfcf;
+
+    --accent: #1f5c45;
+    --accent-strong: #164634;
+    --accent-soft: #e6efeb;
+    --on-accent: #ffffff;
+
+    --danger: #b42318;
+    --code-bg: #161616;
+    --code-ink: #f2f2f2;
+
+}
+
+/* 値はモック（docs/design/reference/portfolio.html）に合わせている */
+:root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: #0e0e0e;
+    --surface: #1a1a1a;
+    --ink: #ededea;
+    --body: #d6d6d2;
+    --muted: #9c9c98;
+    --line: #2a2a2a;
+    --field: #3a3a3a;
+
+    --accent: #5dbb94;
+    --accent-strong: #7fcca9;
+    --accent-soft: #15241e;
+    --on-accent: #0e0e0e;
+
+    --danger: #f97066;
+    --code-bg: #1c1c1c;
+    --code-ink: #f2f2f2;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        color-scheme: dark;
+
+        --bg: #0e0e0e;
+        --surface: #1a1a1a;
+        --ink: #ededea;
+        --body: #d6d6d2;
+        --muted: #9c9c98;
+        --line: #2a2a2a;
+        --field: #3a3a3a;
+
+        --accent: #5dbb94;
+        --accent-strong: #7fcca9;
+        --accent-soft: #15241e;
+        --on-accent: #0e0e0e;
+
+        --danger: #f97066;
+        --code-bg: #1c1c1c;
+        --code-ink: #f2f2f2;
+    }
+}
+
+@theme inline {
+    /* 英数字は Inter、日本語は Noto Sans JP で表示される */
+    --font-sans: 'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+    --font-en: 'Inter', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+    /* 注記・番号・メニュー（モックの .mono） */
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-ink: var(--ink);
+    --color-body: var(--body);
+    --color-muted: var(--muted);
+    --color-line: var(--line);
+    --color-field: var(--field);
+    --color-accent: var(--accent);
+    --color-accent-strong: var(--accent-strong);
+    --color-accent-soft: var(--accent-soft);
+    --color-on-accent: var(--on-accent);
+    --color-danger: var(--danger);
+    --color-code-bg: var(--code-bg);
+    --color-code-ink: var(--code-ink);
+}
+
 @theme {
-    --font-sans: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+    /* 文字サイズ（モックの値）。大きな見出しは画面幅に合わせて変わる */
+    --text-mono: 0.8125rem; /* 13px */
+    --text-mono--line-height: 1.6;
+    --text-small: 0.875rem;
+    --text-small--line-height: 1.8;
+    --text-base: 1rem;
+    --text-base--line-height: 1.9;
+    --text-lead: 1.0625rem; /* 17px */
+    --text-lead--line-height: 1.7;
+    --text-statement: 1.375rem; /* 22px */
+    --text-statement--line-height: 1.5;
+    --text-bio: clamp(1.375rem, 2.2vw, 1.875rem); /* 22 → 30px */
+    --text-bio--line-height: 1.55;
+    --text-row: clamp(1.375rem, 2.6vw, 2.25rem); /* 22 → 36px */
+    --text-row--line-height: 1.2;
+    --text-row--letter-spacing: -0.02em;
+    --text-section: clamp(3rem, 7vw, 6.5rem); /* 48 → 104px */
+    --text-section--line-height: 1;
+    --text-section--letter-spacing: -0.045em;
+    --text-contact: clamp(3.5rem, 11vw, 11rem); /* 56 → 176px */
+    --text-contact--line-height: 0.9;
+    --text-contact--letter-spacing: -0.055em;
+    --text-brand: clamp(4.5rem, 15vw, 14.5rem); /* 72 → 232px */
+    --text-brand--line-height: 0.86;
+    --text-brand--letter-spacing: -0.055em;
 
-    --color-paper: #F7F5F0;
-    --color-band: #EFEBE2;
-    --color-ink: #1C1C1C;
-    --color-body: #444444;
-    --color-muted: #5C5A55;
-    --color-line: #DAD6CC;
-    --color-placeholder: #E8E4DA;
-    --color-field: #C9C4B8;
+    /* 余白・幅 */
+    --container-content: 85rem; /* 1360px */
+    --container-prose: 45rem; /* 720px：ブログ記事・実績詳細 */
+    --spacing-gutter: 2.5rem; /* 左右 40px（720px以下は 16px：.container で切り替え） */
+    --spacing-section: 7.5rem; /* セクションの上下 120px */
+    --spacing-row: 2rem; /* 一覧の1行の上下 32px */
+    --radius-photo: 4px;
 
-    --color-accent: #2E6B4E;
-    --color-accent-dark: #1F4C37;
-    --color-accent-soft: #E1ECE5;
-
-    --color-sample: #6B4510;
-    --color-sample-soft: #F4ECD9;
+    --breakpoint-narrow: 45rem; /* 720px（モックの切り替え幅） */
 }
 
 @layer base {
@@ -33,49 +154,790 @@
     }
 
     body {
-        @apply bg-paper font-sans text-ink leading-[1.8] antialiased;
+        @apply bg-bg font-sans text-ink leading-[1.8] antialiased;
+        /* 日本語は文節で改行（対応ブラウザのみ） */
+        word-break: auto-phrase;
+        transition:
+            background-color 0.4s ease,
+            color 0.4s ease;
     }
 
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+
+    /* モックと同じ：リンクは文字色のまま、ホバーで少し薄くする */
     a {
-        @apply text-accent transition-colors hover:text-accent-dark;
+        color: inherit;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+    a:hover {
+        opacity: 0.7;
     }
 
     :focus-visible {
         @apply outline-2 outline-offset-2 outline-accent;
     }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        body {
+            transition: none;
+        }
+    }
 }
 
 @layer components {
-    .section {
-        @apply mx-auto max-w-[1120px] px-6 pt-24;
+    /*
+     * ここから下は、モック（docs/design/reference/portfolio.html）の CSS をほぼそのまま移したもの。
+     * h1・h2 などの要素への直接指定は、ブログ本文に影響しないようにクラスに置き換えている。
+     * モックの .container は Tailwind の container と名前がぶつかるので .wrap にしている。
+     */
+
+    .wrap {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+    .mono {
+        font-family: var(--font-mono);
+        font-size: 13px;
+    }
+    .muted {
+        color: var(--muted);
+    }
+    .dot {
+        color: var(--accent);
     }
 
-    .eyebrow {
-        @apply m-0 text-[13px] font-bold tracking-[0.12em] text-accent;
+    /* Header */
+    .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        transition: background 0.4s ease;
+    }
+    .header-inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 18px;
+        padding-bottom: 18px;
+    }
+    .logo {
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.08em;
+    }
+    .site-nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 28px;
+    }
+    .lang {
+        display: flex;
+        gap: 4px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px;
+    }
+    .lang a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        min-width: 44px;
+        height: 32px;
+        font-size: 12px;
+        color: var(--ink);
+    }
+    .lang a[aria-current] {
+        background: var(--ink);
+        color: var(--bg);
+    }
+    .theme-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .theme-btn:hover {
+        opacity: 0.7;
+    }
+    .icon-sun {
+        display: none;
+    }
+    [data-theme='dark'] .icon-sun {
+        display: block;
+    }
+    [data-theme='dark'] .icon-moon {
+        display: none;
+    }
+    /* JavaScript が無い（data-theme が付かない）ときは切り替えられないので隠す */
+    :root:not([data-theme]) .theme-btn {
+        display: none;
     }
 
-    .section-title {
-        @apply mt-1 mb-10 text-[26px] font-bold md:text-[30px];
+    /* Hero */
+    .hero {
+        padding: 96px 0 72px;
+        border-bottom: 1px solid var(--line);
+    }
+    .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+    .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .status::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+    }
+    /* モックの h1。SEOのためh1は日本語のキャッチコピーにして、大きな名前はロゴとして表示する */
+    .brand {
+        margin: 0;
+        font-weight: 800;
+        font-size: clamp(72px, 15vw, 232px);
+        line-height: 0.86;
+        letter-spacing: -0.055em;
+    }
+    .brand > span {
+        display: block;
+    }
+    .brand > span + span {
+        padding-left: 12%;
+    }
+    .hero-foot {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 40px;
+        margin-top: 64px;
+        align-items: end;
+    }
+    .hero-lead {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.5;
+        font-weight: 500;
+        max-width: 520px;
+    }
+    .hero-text {
+        margin: 16px 0 0;
+        max-width: 520px;
+        font-size: 15px;
+        line-height: 1.8;
+    }
+    .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+    }
+    .hero-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .scroll {
+        justify-self: end;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .card {
-        @apply rounded-lg border border-line bg-white;
+    /* Section head */
+    .block {
+        padding: 120px 0;
+        border-top: 1px solid var(--line);
+    }
+    .block--first {
+        border-top: 0;
+    }
+    .sec-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 0 0 48px;
+        font-weight: inherit;
+    }
+    .sec-title {
+        font-size: clamp(48px, 7vw, 104px);
+        font-weight: 800;
+        letter-spacing: -0.045em;
+        line-height: 1;
+    }
+    .sec-lead {
+        margin: -16px 0 40px;
+        max-width: 640px;
+        font-size: 15px;
+        line-height: 1.8;
+    }
+    .sub-title {
+        margin: 72px 0 24px;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
     }
 
-    .btn-primary {
-        @apply inline-block rounded-md bg-accent px-7 py-3.5 text-[15px] font-medium text-white no-underline hover:bg-accent-dark hover:text-white;
+    /* Rows（モックの .works / .wrow） */
+    .rows {
+        border-top: 1px solid var(--ink);
+    }
+    .wrow {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 3fr) minmax(0, 2fr) 40px;
+        gap: 24px;
+        align-items: center;
+        padding: 32px 0;
+        border-bottom: 1px solid var(--line);
+        transition: padding 0.35s ease;
+    }
+    a.wrow:hover {
+        padding-left: 16px;
+        opacity: 1;
+    }
+    .wrow--static {
+        grid-template-columns: 64px minmax(0, 3fr) minmax(0, 2fr);
+        align-items: start;
+    }
+    /* ブログは番号の代わりに日付が入るので、最初の列を広くする */
+    .wrow--post {
+        grid-template-columns: 110px minmax(0, 3fr) minmax(0, 2fr) 40px;
+    }
+    .wrow .title {
+        display: block;
+        font-size: clamp(22px, 2.6vw, 36px);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+    }
+    .wrow .desc {
+        display: block;
+        font-size: 14px;
+        line-height: 1.8;
+        margin-top: 6px;
+    }
+    .wrow .stack ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .price {
+        font-size: clamp(22px, 2.6vw, 32px);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+    }
+    .price small {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .arrow {
+        transform: rotate(-45deg);
+        transition: transform 0.35s ease;
+    }
+    a.wrow:hover .arrow {
+        transform: translateX(6px) rotate(-45deg);
+    }
+    .badge {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 3px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+    }
+    .badge--demo {
+        border-color: transparent;
+        background: var(--accent-soft);
+        color: var(--accent);
+    }
+    .badge--client {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--bg);
+    }
+    .more {
+        margin-top: 40px;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .pill-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 28px;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 500;
     }
 
-    .btn-secondary {
-        @apply inline-block rounded-md border border-accent bg-white px-7 py-[13px] text-[15px] font-medium text-accent no-underline hover:bg-accent-soft;
+    /* 相談の流れ */
+    .flow {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line);
+    }
+    .flow li {
+        padding: 24px 24px 24px 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .flow-title {
+        margin: 12px 0 6px;
+        font-size: 17px;
+        font-weight: 600;
+    }
+    .flow-text {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.8;
     }
 
-    .tag {
-        @apply rounded bg-band px-2.5 py-0.5 text-xs text-body;
+    /* Profile */
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 64px;
+        margin-top: 16px;
+    }
+    .portrait {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        max-width: 420px;
+        background: var(--surface);
+        border-radius: 4px;
+        display: flex;
+        align-items: flex-end;
+        padding: 20px;
+        font-size: 12px;
+        overflow: hidden;
+    }
+    .portrait img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .profile-body {
+        display: flex;
+        flex-direction: column;
+        gap: 48px;
+    }
+    .bio {
+        margin: 0;
+        font-size: clamp(22px, 2.2vw, 30px);
+        line-height: 1.55;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+    }
+    .bio-sub {
+        margin: -24px 0 0;
+        font-size: 15px;
+        line-height: 1.9;
+    }
+    .facts {
+        margin: 0;
+        display: grid;
+        grid-template-columns: 140px minmax(0, 1fr);
+        row-gap: 20px;
+        column-gap: 24px;
+        font-size: 15px;
+    }
+    .facts dd {
+        margin: 0;
+    }
+    .strengths {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line);
+    }
+    .strengths li {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .strengths p {
+        margin: 0;
+    }
+    .skills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    .skills span.skill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 14px;
+    }
+    .skill-level {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+    }
+    .skill-level--work {
+        color: var(--accent);
+    }
+    .skill-groups {
+        margin: 0;
+        display: grid;
+        grid-template-columns: 200px minmax(0, 1fr);
+        column-gap: 24px;
+        border-top: 1px solid var(--ink);
+    }
+    .skill-groups dt,
+    .skill-groups dd {
+        margin: 0;
+        padding: 24px 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .skill-groups dd .skills {
+        margin-top: 0;
     }
 
-    .field {
-        @apply w-full rounded-md border border-field bg-white p-3 font-normal text-ink;
+    /* FAQ */
+    .faq details {
+        border-bottom: 1px solid var(--line);
+    }
+    .faq summary {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) 40px;
+        gap: 24px;
+        align-items: center;
+        padding: 28px 0;
+        cursor: pointer;
+        list-style: none;
+        font-size: clamp(17px, 1.8vw, 22px);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    .faq summary::-webkit-details-marker {
+        display: none;
+    }
+    .faq-icon {
+        justify-self: end;
+        transition: transform 0.35s ease;
+    }
+    .faq details[open] .faq-icon {
+        transform: rotate(45deg);
+    }
+    .faq-answer {
+        margin: 0;
+        padding: 0 64px 28px 88px;
+        font-size: 15px;
+        line-height: 1.9;
+    }
+
+    /* Contact */
+    .contact-block {
+        padding: 140px 0 120px;
+    }
+    .contact-title {
+        display: block;
+        margin: 32px 0 0;
+        font-size: clamp(56px, 11vw, 176px);
+        font-weight: 800;
+        letter-spacing: -0.055em;
+        line-height: 0.9;
+    }
+    .contact-heading {
+        display: block;
+        margin-top: 24px;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    .contact-foot {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 32px;
+        margin-top: 64px;
+    }
+    .contact-lead {
+        margin: 0;
+        max-width: 460px;
+        font-size: 17px;
+        line-height: 1.7;
+    }
+    .mail-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        padding: 22px 40px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--bg);
+        font: inherit;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .mail-btn:hover {
+        opacity: 0.8;
+    }
+
+    /* フォーム（モックには無いので、同じトーンで追加） */
+    .contact-form {
+        display: grid;
+        gap: 32px;
+        margin-top: 96px;
+        padding-top: 48px;
+        border-top: 1px solid var(--line);
+        max-width: 880px;
+    }
+    .form-field {
+        display: grid;
+        gap: 8px;
+    }
+    .form-input {
+        width: 100%;
+        padding: 12px 0;
+        border: 0;
+        border-bottom: 1px solid var(--field);
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-size: 17px;
+        border-radius: 0;
+        transition: border-color 0.2s ease;
+    }
+    .form-input:focus {
+        outline: none;
+        border-bottom-color: var(--ink);
+    }
+    .form-error {
+        font-size: 13px;
+        color: var(--danger);
+    }
+    .notice {
+        margin-top: 96px;
+        padding: 32px;
+        border-radius: 4px;
+        background: var(--accent-soft);
+        color: var(--ink);
+    }
+
+    /* 下層ページ（ブログ・実績詳細） */
+    .page-head {
+        padding: 96px 0 48px;
+    }
+    .page-title {
+        margin: 24px 0 0;
+        font-size: clamp(32px, 4.4vw, 64px);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+    }
+    .article {
+        max-width: 720px;
+    }
+    .cta-box {
+        margin-top: 72px;
+        padding: 40px;
+        border-radius: 4px;
+        background: var(--surface);
+    }
+
+    /* Footer */
+    .site-footer {
+        border-top: 1px solid var(--line);
+        /* 下のメニューバーに隠れないよう、バーの高さ分の余白を足す */
+        padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    }
+    .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 28px;
+        padding-bottom: 28px;
+        font-size: 12px;
+    }
+    .footer-inner .links {
+        display: flex;
+        gap: 24px;
+    }
+
+    /* 下のメニューバー（design-system.md §2-2） */
+    .dock {
+        position: fixed;
+        inset-inline: 0;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        z-index: 50;
+        display: flex;
+        justify-content: center;
+        padding: 0 16px;
+    }
+    .dock-list {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        font-family: var(--font-mono);
+        font-size: 13px;
+    }
+    .dock-link {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 999px;
+    }
+    .dock-ja {
+        color: var(--muted);
+    }
+    .dock-cta {
+        background: var(--ink);
+        color: var(--bg);
+        font-weight: 500;
+        margin-left: 4px;
+        padding: 0 20px;
+    }
+    /*
+     * 今いる場所：アクセント色の1px枠と、ごく淡い外側の光。
+     * 他のページ（aria-current="page"）はリンク自体に付ける。トップでは ③ で .dock-indicator を動かす。
+     */
+    .dock-link[aria-current],
+    .dock-indicator {
+        box-shadow:
+            inset 0 0 0 1px var(--accent),
+            0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+    .dock-indicator {
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        left: 0;
+        width: 0;
+        border-radius: 999px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (max-width: 720px) {
+        .wrap {
+            padding: 0 16px;
+        }
+        .site-nav {
+            gap: 16px;
+        }
+        .wrow,
+        .wrow--static {
+            grid-template-columns: 40px minmax(0, 1fr) 28px;
+        }
+        .wrow--static {
+            grid-template-columns: 40px minmax(0, 1fr);
+        }
+        .wrow--post {
+            grid-template-columns: minmax(0, 1fr) 28px;
+            row-gap: 8px;
+        }
+        .wrow--post > time {
+            grid-column: 1 / -1;
+        }
+        /* 技術の列だけ隠す（モックと同じ）。料金などの大事な情報は、項目名の下に回す */
+        .wrow .stack--tech {
+            display: none;
+        }
+        .wrow .stack:not(.stack--tech) {
+            grid-column: 2 / -1;
+        }
+        .scroll {
+            justify-self: start;
+        }
+        .facts {
+            grid-template-columns: 100px minmax(0, 1fr);
+        }
+        .skill-groups {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .skill-groups dt {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+        .faq summary {
+            grid-template-columns: 40px minmax(0, 1fr) 28px;
+            gap: 16px;
+        }
+        .faq-answer {
+            padding: 0 0 28px 56px;
+        }
+        .dock-list {
+            gap: 0;
+            padding: 4px;
+            font-size: 12px;
+        }
+        .dock-link {
+            padding: 0 10px;
+        }
+        .dock-ja {
+            display: none;
+        }
+        .dock-cta {
+            padding: 0 14px;
+        }
+    }
+
+    @media (max-width: 960px) {
+        .dock-ja {
+            display: none;
+        }
     }
 
     /* ブログ本文（Markdown）の見た目 */
@@ -101,19 +963,19 @@
         @apply my-1;
     }
     .prose-post a {
-        @apply underline underline-offset-2;
+        @apply text-accent underline underline-offset-2;
     }
     .prose-post blockquote {
         @apply my-6 border-l-4 border-line pl-4 text-muted;
     }
     .prose-post code {
-        @apply rounded bg-band px-1.5 py-0.5 text-[14px] text-ink;
+        @apply rounded bg-surface px-1.5 py-0.5 text-[14px] text-ink;
     }
     .prose-post pre {
-        @apply my-6 overflow-x-auto rounded-lg bg-ink p-4 text-[14px] leading-relaxed text-white;
+        @apply my-6 overflow-x-auto rounded-lg bg-code-bg p-4 text-[14px] leading-relaxed text-code-ink;
     }
     .prose-post pre code {
-        @apply bg-transparent p-0 text-white;
+        @apply bg-transparent p-0 text-code-ink;
     }
     .prose-post img {
         @apply my-6 max-w-full rounded-lg;

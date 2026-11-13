@@ -1,23 +1,29 @@
 <x-layouts.app :title="$post->title" :description="$post->excerptText()">
-    <article class="mx-auto max-w-[760px] px-6 pt-20 pb-24">
-        <p class="mb-3 text-[13px] text-muted">
-            <time datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->format('Y.m.d') }}</time>
-            @if ($post->category)
-                ・{{ $post->category }}
-            @endif
-        </p>
-        <h1 class="mb-10 text-[28px] leading-[1.5] font-bold md:text-[32px]">{{ $post->title }}</h1>
+<div class="wrap">
+    <article class="article mx-auto">
+        <header class="page-head" data-reveal>
+            <p class="mono muted">
+                <a href="{{ route('posts.index') }}">Blog</a>
+                <span aria-hidden="true"> — </span>
+                <time datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->format('Y.m.d') }}</time>
+                @if ($post->category)
+                    ・{{ $post->category }}
+                @endif
+            </p>
+            <h1 class="page-title">{{ $post->title }}</h1>
+        </header>
 
         <div class="prose-post">
             {!! $post->bodyHtml() !!}
         </div>
 
-        <div class="mt-16 rounded-lg bg-band p-8">
-            <p class="mb-2 font-bold">業務システムやサイト制作のご相談はこちら</p>
-            <p class="mb-5 text-[14px] text-body">「この作業、もっと楽にならないかな」の段階から大丈夫です。</p>
-            <a href="{{ route('home') }}#contact" class="btn-primary">無料で相談する</a>
+        <div class="cta-box">
+            <p class="text-[20px] font-semibold">業務システムやサイト制作のご相談はこちら</p>
+            <p class="mt-2 mb-6 text-[14px] muted">「この作業、もっと楽にならないかな」の段階から大丈夫です。</p>
+            <a href="{{ route('home') }}#contact" class="mail-btn">無料で相談する →</a>
         </div>
 
-        <p class="mt-10"><a href="{{ route('posts.index') }}" class="text-[14px] font-medium">← 記事一覧へ</a></p>
+        <p class="mt-12 mb-24"><a href="{{ route('posts.index') }}" class="pill-btn">← 記事一覧へ</a></p>
     </article>
+</div>
 </x-layouts.app>

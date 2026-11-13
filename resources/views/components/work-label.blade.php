@@ -1,11 +1,4 @@
 @props(['work'])
 
-@php
-    $classes = match ($work->label) {
-        'client' => 'bg-accent text-white',
-        'demo' => 'bg-accent-soft text-accent-dark',
-        default => 'bg-sample-soft text-sample',
-    };
-@endphp
-
-<span {{ $attributes->class(['rounded px-2.5 py-0.5 text-xs font-bold', $classes]) }}>{{ $work->labelText() }}</span>
+{{-- 実案件とサンプルを見分けるラベル。色だけに頼らず、文字でも区別する --}}
+<span {{ $attributes->class(['badge', 'badge--client' => $work->label === 'client', 'badge--demo' => $work->label === 'demo']) }}>{{ $work->labelText() }}</span>
