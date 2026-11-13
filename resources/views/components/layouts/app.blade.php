@@ -51,9 +51,11 @@
         <div class="wrap header-inner">
             <a href="{{ route('home') }}" class="logo">toshLab<span class="dot">.</span></a>
             <nav aria-label="メインメニュー" class="site-nav mono">
-                <a href="{{ route('home') }}#works">Works</a>
-                <a href="{{ route('home') }}#about">Profile</a>
-                <a href="{{ route('home') }}#contact">Contact</a>
+                {{-- スマホ（720px以下）では、同じメニューが下のバーにあるので文字のリンクは隠す（app.css） --}}
+                <a href="{{ route('home') }}#works" class="site-nav-link">Works</a>
+                <a href="{{ route('home') }}#about" class="site-nav-link">Profile</a>
+                <a href="{{ route('posts.index') }}" class="site-nav-link" @if (request()->routeIs('posts.*')) aria-current="page" @endif>Blog</a>
+                <a href="{{ route('home') }}#contact" class="site-nav-link">Contact</a>
 
                 {{-- 英語版（/en）は ⑪ で追加する。ルートができるまでは表示しない --}}
                 @if (Route::has('en.home'))

@@ -1,10 +1,13 @@
-@props(['post'])
+@props(['post', 'heading' => 'h3'])
 
-{{-- ブログ記事の1行（モックの .wrow）。番号の位置に日付を出す --}}
+{{--
+    ブログ記事の1行（モックの .wrow）。番号の位置に日付を出す。
+    見出しの階層を飛ばさないよう、置く場所に合わせて heading を変える（トップ：h2の下なのでh3／一覧：h1の下なのでh2）。
+--}}
 <a href="{{ route('posts.show', $post) }}" class="wrow wrow--post" data-reveal-item>
     <time class="mono muted" datetime="{{ $post->published_at->toDateString() }}">{{ $post->published_at->format('Y.m.d') }}</time>
     <div>
-        <h3 class="title">{{ $post->title }}</h3>
+        <{{ $heading }} class="title">{{ $post->title }}</{{ $heading }}>
         <span class="desc muted">{{ $post->excerptText() }}</span>
     </div>
     <span class="stack stack--tech mono muted">{{ $post->category }}</span>

@@ -9,7 +9,7 @@
         @if ($posts->isNotEmpty())
             <div class="rows" data-reveal-group>
                 @foreach ($posts as $post)
-                    <x-post-row :post="$post" />
+                    <x-post-row :post="$post" heading="h2" />
                 @endforeach
             </div>
 
