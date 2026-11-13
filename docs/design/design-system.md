@@ -156,7 +156,9 @@ Excelや手作業の業務を、使いやすいシステムに。(h1)    Web Eng
 - ホバー（行のずれ・矢印・不透明度0.7）と、テーマの色の変化は CSS
 - 隠してから出す仕組みは `html.js-motion` のときだけ有効。GSAPが3秒以内に動かなければ全部表示。reduced-motion では最初から全部表示
 - 慣性スクロールは使わない
-- ファイル：`resources/js/animations/` に `index.js`・`hero.js`・`reveal.js`・`header.js`・`dock.js`（テーマの切り替えは `resources/js/theme.js`）。Bladeとのつなぎは `data-` 属性だけ
+- ファイル：`resources/js/animations/` に `index.js`・`hero.js`・`reveal.js`・`dock.js`（テーマの切り替えは `resources/js/theme.js`）。Bladeとのつなぎは `data-` 属性だけ（`data-hero-line`・`data-hero-item`・`data-reveal`・`data-reveal-item`・`data-dock`）
+- ヘッダーはモックどおり最初から下線があるので、スクロールで変える動き（`header.js`）は作らない
+- トップの「今いる場所」は `aria-current="location"`、他のページは Blade の `aria-current="page"`
 
 ---
 

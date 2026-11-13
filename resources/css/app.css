@@ -853,7 +853,7 @@
      * 今いる場所：アクセント色の1px枠と、ごく淡い外側の光。
      * 他のページ（aria-current="page"）はリンク自体に付ける。トップでは ③ で .dock-indicator を動かす。
      */
-    .dock-link[aria-current],
+    .dock-link[aria-current='page'],
     .dock-indicator {
         box-shadow:
             inset 0 0 0 1px var(--accent),
@@ -868,6 +868,18 @@
         border-radius: 999px;
         opacity: 0;
         pointer-events: none;
+    }
+
+    /*
+     * ふわっと出す要素の最初の状態。<head> で html に js-motion が付いたときだけ隠す。
+     * JavaScript が無い／reduced-motion／GSAP の読み込み失敗のときは、最初から全部表示される。
+     */
+    .js-motion [data-reveal],
+    .js-motion [data-reveal-item],
+    .js-motion [data-hero-line],
+    .js-motion [data-hero-item],
+    .js-motion .dock {
+        opacity: 0;
     }
 
     @media (max-width: 720px) {
@@ -931,6 +943,10 @@
         }
         .dock-cta {
             padding: 0 14px;
+        }
+        .dock-indicator {
+            top: 4px;
+            bottom: 4px;
         }
     }
 

@@ -24,6 +24,17 @@
                 theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
             document.documentElement.setAttribute('data-theme', theme);
+
+            // ふわっと出す動きは、動きを減らす設定が無いときだけ。js-motion が付いたときだけ CSS で最初に隠す。
+            // GSAP が3秒以内に動かなければ（読み込み失敗など）、クラスを外して全部表示する。
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.documentElement.classList.add('js-motion');
+                setTimeout(function () {
+                    if (!window.__toshMotionReady) {
+                        document.documentElement.classList.remove('js-motion');
+                    }
+                }, 3000);
+            }
         })();
     </script>
 
