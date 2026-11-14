@@ -1,9 +1,4 @@
+# 設定に誤りがあれば読み直さずに止める（構文チェックと読み直しを1つの処理にする）
 - name: Reload nginx
-  ansible.builtin.command: nginx -t
-  changed_when: false
-  notify: Reload nginx service
-
-- name: Reload nginx service
-  ansible.builtin.service:
-    name: nginx
-    state: reloaded
+  ansible.builtin.shell: nginx -t && systemctl reload nginx
+  changed_when: true
