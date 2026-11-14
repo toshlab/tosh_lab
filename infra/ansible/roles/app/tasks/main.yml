@@ -1,0 +1,88 @@
+# --- GitHub から取得するための鍵（リポジトリが Private のあいだは、読み取り専用のデプロイキーを使う）---
+- name: deploy ユーザーの .ssh
+  ansible.builtin.file:
+    path: "/home/{{ deploy_user }}/.ssh"
+    state: directory
+    owner: "{{ deploy_user }}"
+    mode: "0700"
+
+- name: GitHub 用のデプロイキーを作る
+  ansible.builtin.command:
+    cmd: "ssh-keygen -t ed25519 -N '' -C 'toshlab-deploy' -f /home/{{ deploy_user }}/.ssh/github_deploy"
+    creates: "/home/{{ deploy_user }}/.ssh/github_deploy"
+  become_user: "{{ deploy_user }}"
+
+- name: GitHub への接続にデプロイキーを使う
+  ansible.builtin.copy:
+    dest: "/home/{{ deploy_user }}/.ssh/config"
+    content: |
+      Host github.com
+        IdentityFile ~/.ssh/github_deploy
+        IdentitiesOnly yes
+    owner: "{{ deploy_user }}"
+    mode: "0600"
+
+- name: GitHub のホスト鍵を登録
+  ansible.builtin.shell: "ssh-keyscan -t ed25519 github.com >> /home/{{ deploy_user }}/.ssh/known_hosts"
+  args:
+    creates: "/home/{{ deploy_user }}/.ssh/known_hosts"
+  become_user: "{{ deploy_user }}"
+
+- name: デプロイキーの公開鍵を読む
+  ansible.builtin.slurp:
+    src: "/home/{{ deploy_user }}/.ssh/github_deploy.pub"
+  register: deploy_key
+
+- name: GitHub に登録してもらう公開鍵
+  ansible.builtin.debug:
+    msg:
+      - "GitHub のリポジトリ → Settings → Deploy keys → Add deploy key に、次の1行を登録してください（Allow write access はオフ）"
+      - "{{ deploy_key.content | b64decode | trim }}"
+
+- name: 登録できたか確認（未登録なら、登録してから Enter）
+  ansible.builtin.command: ssh -T git@github.com
+  become_user: "{{ deploy_user }}"
+  register: github_check
+  failed_when: "'successfully authenticated' not in github_check.stderr"
+  changed_when: false
+  retries: 0
+  ignore_errors: true
+
+- name: 未登録なら一時停止
+  ansible.builtin.pause:
+    prompt: "上の公開鍵を GitHub の Deploy keys に登録したら Enter を押してください"
+  when: github_check is failed
+
+# --- アプリの置き場所 ---
+- name: アプリのディレクトリ
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: www-data
+    mode: "0755"
+
+# 証明書がまだ無ければ HTTP だけで作り、tls ロールで取得したあと HTTPS にする
+- name: 証明書がすでにあるか確認
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ app_domain }}/fullchain.pem"
+  register: tls_cert
+
+- name: nginx のサイト設定
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: "/etc/nginx/sites-available/{{ app_name }}.conf"
+    mode: "0644"
+  vars:
+    tls_cert_exists: "{{ tls_cert.stat.exists }}"
+  notify: Reload nginx
+
+- name: サイトを有効にする
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ app_name }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ app_name }}.conf"
+    state: link
+  notify: Reload nginx
+
+- name: アプリを配置する
+  ansible.builtin.include_tasks: deploy.yml

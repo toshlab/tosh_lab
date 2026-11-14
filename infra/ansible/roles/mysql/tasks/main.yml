@@ -1,0 +1,38 @@
+- name: MySQL サーバー
+  ansible.builtin.apt:
+    name: mysql-server
+    state: present
+
+# メモリ2GBに合わせて小さめにする
+- name: MySQL の設定
+  ansible.builtin.copy:
+    dest: /etc/mysql/mysql.conf.d/90-toshlab.cnf
+    content: |
+      [mysqld]
+      bind-address = 127.0.0.1
+      innodb_buffer_pool_size = 128M
+      performance_schema = OFF
+      max_connections = 50
+      character-set-server = utf8mb4
+      collation-server = utf8mb4_unicode_ci
+    mode: "0644"
+  notify: Restart mysql
+
+- name: MySQL を起動しておく
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: true
+
+# root はソケット認証のまま（パスワードを持たない）。アプリ用のユーザーだけを作る
+- name: データベースとアプリ用ユーザーを作る
+  ansible.builtin.command:
+    cmd: mysql
+    stdin: |
+      CREATE DATABASE IF NOT EXISTS `{{ db_name }}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      CREATE USER IF NOT EXISTS '{{ db_user }}'@'localhost' IDENTIFIED BY '{{ vault_db_password }}';
+      ALTER USER '{{ db_user }}'@'localhost' IDENTIFIED BY '{{ vault_db_password }}';
+      GRANT ALL PRIVILEGES ON `{{ db_name }}`.* TO '{{ db_user }}'@'localhost';
+      FLUSH PRIVILEGES;
+  changed_when: false
+  no_log: true

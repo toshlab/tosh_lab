@@ -1,0 +1,66 @@
+# GitHub の内容を取得して、本番用にセットアップする。何度実行してもよい。
+- name: GitHub から取得
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_branch }}"
+    accept_hostkey: false
+  become_user: "{{ deploy_user }}"
+
+- name: .env（本番用）
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ deploy_user }}"
+    group: www-data
+    mode: "0640"
+
+- name: Composer で本番用のパッケージを入れる
+  ansible.builtin.command:
+    cmd: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+    chdir: "{{ app_dir }}"
+  become_user: "{{ deploy_user }}"
+  changed_when: true
+
+# サーバーに Node.js は入れない（メモリ節約）。フロントは Mac でビルドしたものを送る
+- name: ビルド済みのフロント（Mac の public/build）を送る
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../public/build/"
+    dest: "{{ app_dir }}/public/build/"
+    delete: true
+  # deploy ユーザーとして送る（Mac の標準の rsync は --chown に対応していないため、所有者の指定はしない）
+  become: false
+
+- name: storage と bootstrap/cache を書き込めるようにする
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: www-data
+    mode: "u=rwX,g=rwX,o=rX"
+    recurse: true
+  loop:
+    - storage
+    - bootstrap/cache
+
+- name: artisan のコマンド
+  ansible.builtin.command:
+    cmd: "php artisan {{ item }}"
+    chdir: "{{ app_dir }}"
+  become_user: "{{ deploy_user }}"
+  loop:
+    - migrate --force
+    - db:seed --class=WorkSeeder --force
+    - storage:link
+    - filament:assets
+    - optimize
+    - filament:optimize
+  register: artisan
+  changed_when: true
+  failed_when: artisan.rc != 0 and 'already exists' not in artisan.stdout + artisan.stderr
+
+# opcache.validate_timestamps = 0 なので、更新したら PHP-FPM を読み直す
+- name: PHP-FPM を読み直す
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
+    state: reloaded

@@ -1,0 +1,27 @@
+# 1回目だけ実行する：root で接続して、作業用ユーザー（deploy）を作る。
+#   ansible-playbook bootstrap.yml -e ansible_user=root
+- name: 作業用ユーザーを作る
+  hosts: web
+  become: false
+  gather_facts: false
+  tasks:
+    - name: deploy ユーザーを作成
+      ansible.builtin.user:
+        name: "{{ deploy_user }}"
+        shell: /bin/bash
+        groups: sudo
+        append: true
+        create_home: true
+
+    - name: SSH の公開鍵を登録
+      ansible.posix.authorized_key:
+        user: "{{ deploy_user }}"
+        key: "{{ deploy_public_key }}"
+
+    # 鍵でしかログインできないので、sudo はパスワードなしにする
+    - name: sudo をパスワードなしで使えるようにする
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/90-{{ deploy_user }}"
+        content: "{{ deploy_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        mode: "0440"
+        validate: "visudo -cf %s"

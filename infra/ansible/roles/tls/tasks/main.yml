@@ -1,0 +1,70 @@
+# Let's Encrypt の証明書。
+# certbot には nginx の設定を書き換えさせず（certonly --webroot）、設定は app ロールのテンプレートだけで管理する。
+# DNS がこのサーバーに向いていないと取得に失敗するので、先に ConoHa の DNS で A レコードを設定しておく。
+- name: certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: 証明書を取得する（すでにあれば何もしない）
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --webroot --non-interactive --agree-tos
+      -w {{ app_dir }}/public
+      -m {{ letsencrypt_email }}
+      {% for d in app_domains %}-d {{ d }} {% endfor %}
+    creates: "/etc/letsencrypt/live/{{ app_domain }}/fullchain.pem"
+  register: certbot_issue
+
+# 自動更新で新しい証明書になったら、nginx に読み直させる
+- name: 更新後に nginx を読み直す
+  ansible.builtin.copy:
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+    content: |
+      #!/bin/sh
+      systemctl reload nginx
+    mode: "0755"
+
+# 以前に certbot --nginx で取得した場合も、更新の方法を webroot に切り替える
+- name: 更新の方法を webroot にする
+  ansible.builtin.lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ app_domain }}.conf"
+    regexp: "^authenticator ="
+    line: "authenticator = webroot"
+  failed_when: false
+
+- name: certbot に nginx の設定を書き換えさせない
+  ansible.builtin.lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ app_domain }}.conf"
+    regexp: "^installer ="
+    state: absent
+  failed_when: false
+
+- name: 更新時の webroot（renewalparams の中）
+  ansible.builtin.lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ app_domain }}.conf"
+    regexp: "^webroot_path ="
+    insertafter: "^authenticator ="
+    line: "webroot_path = {{ app_dir }}/public,"
+  failed_when: false
+
+- name: 更新時の webroot の場所
+  ansible.builtin.blockinfile:
+    path: "/etc/letsencrypt/renewal/{{ app_domain }}.conf"
+    marker: "# {mark} toshlab webroot"
+    block: |
+      [[webroot_map]]
+      {% for d in app_domains %}
+      {{ d }} = {{ app_dir }}/public
+      {% endfor %}
+  failed_when: false
+
+- name: 証明書を取ったので、HTTPS の設定で nginx を作り直す
+  when: certbot_issue is changed
+  ansible.builtin.template:
+    src: "{{ role_path }}/../app/templates/site.conf.j2"
+    dest: "/etc/nginx/sites-available/{{ app_name }}.conf"
+    mode: "0644"
+  vars:
+    tls_cert_exists: true
+  notify: Reload nginx

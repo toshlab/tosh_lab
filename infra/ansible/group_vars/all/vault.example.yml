@@ -1,0 +1,21 @@
+# このファイルを vault.yml にコピーして値を入れ、暗号化する：
+#   cp group_vars/all/vault.example.yml group_vars/all/vault.yml
+#   ansible-vault encrypt group_vars/all/vault.yml
+# vault.yml は .gitignore 済み。暗号化のパスワードは自分で管理する。
+
+# ローカルで `vendor/bin/sail artisan key:generate --show` を実行して出た値
+vault_app_key: "base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="
+
+# MySQL のアプリ用パスワード（長いランダムな文字列にする）
+vault_db_password: "change-me"
+
+# お問い合わせの通知先・Let's Encrypt の通知先
+vault_site_admin_email: "you@example.com"
+vault_letsencrypt_email: "you@example.com"
+
+# 通知メールの送信（Gmail ならアプリパスワード）。未設定なら送らず、管理画面で確認する
+vault_mail_host: "smtp.gmail.com"
+vault_mail_port: 587
+vault_mail_username: ""
+vault_mail_password: ""
+vault_mail_from_address: "you@example.com"
