@@ -28,3 +28,7 @@ Thumbs.db
 
 # デザインの参考に使う他人のサイトのスクリーンショット（公開しない）
 /docs/design/reference/
+
+# Ansible：IPアドレスとパスワード類は公開しない
+/infra/ansible/inventory.ini
+/infra/ansible/group_vars/all/vault.yml

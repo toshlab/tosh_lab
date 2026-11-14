@@ -1,0 +1,14 @@
+# サーバー全体を組み立てる（何度実行しても同じ状態になる）。
+#   ansible-playbook site.yml --ask-vault-pass
+- name: サーバーの構築
+  hosts: web
+  become: true
+  roles:
+    - common
+    - security
+    - swap
+    - php
+    - mysql
+    - nginx
+    - app
+    - tls

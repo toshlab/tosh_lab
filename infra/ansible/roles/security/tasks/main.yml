@@ -1,0 +1,51 @@
+# --- SSH：鍵だけでログイン、root のログインを禁止 ---
+- name: SSH の設定
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/01-toshlab.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+    mode: "0644"
+    validate: "sshd -t -f %s"
+  notify: Restart ssh
+
+# --- ファイアウォール：SSH と Web だけ開ける ---
+- name: ufw を入れる
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: SSH・HTTP・HTTPS を許可
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: ["22", "80", "443"]
+
+- name: それ以外の受信を拒否して ufw を有効にする
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+# --- 総当たりのログイン試行を止める ---
+- name: fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+
+# --- セキュリティ更新を自動で入れる ---
+- name: unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: 自動更新を有効にする
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"

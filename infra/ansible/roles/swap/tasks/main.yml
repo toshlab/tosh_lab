@@ -1,0 +1,32 @@
+# メモリ2GBなので、ビルドやアクセスの集中に備えてスワップを足す
+- name: スワップファイルがあるか確認
+  ansible.builtin.stat:
+    path: /swapfile
+  register: swapfile
+
+- name: スワップファイルを作る
+  when: not swapfile.stat.exists
+  block:
+    - name: ファイルを確保
+      ansible.builtin.command: "fallocate -l {{ swap_size_mb }}M /swapfile"
+      changed_when: true
+
+    - name: 権限を 600 にする
+      ansible.builtin.file:
+        path: /swapfile
+        mode: "0600"
+
+    - name: スワップとして初期化して有効にする
+      ansible.builtin.shell: mkswap /swapfile && swapon /swapfile
+      changed_when: true
+
+- name: 再起動後も有効にする
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: "/swapfile none swap sw 0 0"
+
+- name: スワップは最後の手段にする
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "10"
+    state: present

@@ -1,0 +1,11 @@
+# アプリだけを更新する（GitHub に push した内容を反映）。
+#   vendor/bin/sail npm run build          # 先に Mac でフロントをビルドする
+#   ansible-playbook deploy.yml --ask-vault-pass
+- name: toshlab のデプロイ
+  hosts: web
+  become: true
+  tasks:
+    - name: アプリの更新
+      ansible.builtin.include_role:
+        name: app
+        tasks_from: deploy

@@ -1,0 +1,66 @@
+# Ubuntu 24.04 の標準は PHP 8.3 なので、PHP 8.4 は ondrej/php の PPA から入れる
+- name: PHP の PPA を追加
+  ansible.builtin.apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+
+- name: PHP 8.4 と Laravel・Filament に必要な拡張
+  ansible.builtin.apt:
+    name:
+      - "php{{ php_version }}-fpm"
+      - "php{{ php_version }}-cli"
+      - "php{{ php_version }}-mysql"
+      - "php{{ php_version }}-mbstring"
+      - "php{{ php_version }}-xml"
+      - "php{{ php_version }}-curl"
+      - "php{{ php_version }}-zip"
+      - "php{{ php_version }}-intl"
+      - "php{{ php_version }}-bcmath"
+      - "php{{ php_version }}-gd"
+      - "php{{ php_version }}-opcache"
+    state: present
+
+- name: php.ini（本番向け）
+  ansible.builtin.copy:
+    dest: "/etc/php/{{ php_version }}/fpm/conf.d/90-toshlab.ini"
+    content: |
+      expose_php = Off
+      memory_limit = 256M
+      upload_max_filesize = 8M
+      post_max_size = 10M
+      opcache.enable = 1
+      opcache.memory_consumption = 128
+      opcache.validate_timestamps = 0
+    mode: "0644"
+  notify: Restart php-fpm
+
+# メモリが少ないので、使うときだけプロセスを起動する（ondemand）
+- name: PHP-FPM のプール
+  ansible.builtin.template:
+    src: pool.conf.j2
+    dest: "/etc/php/{{ php_version }}/fpm/pool.d/www.conf"
+    mode: "0644"
+  notify: Restart php-fpm
+
+- name: Composer があるか確認
+  ansible.builtin.stat:
+    path: /usr/local/bin/composer
+  register: composer_bin
+
+- name: Composer を入れる
+  when: not composer_bin.stat.exists
+  block:
+    - name: インストーラを取得
+      ansible.builtin.get_url:
+        url: https://getcomposer.org/installer
+        dest: /tmp/composer-setup.php
+        mode: "0644"
+
+    - name: インストール
+      ansible.builtin.command: php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+      changed_when: true
+
+    - name: インストーラを削除
+      ansible.builtin.file:
+        path: /tmp/composer-setup.php
+        state: absent

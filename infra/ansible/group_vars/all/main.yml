@@ -1,0 +1,28 @@
+# 公開してよい設定だけを書く。パスワードなどは vault.yml（暗号化・.gitignore 済み）へ。
+
+timezone: Asia/Tokyo
+
+# サーバーにログインする作業用ユーザー（root でのログインは site.yml で禁止する）
+deploy_user: deploy
+deploy_public_key: "{{ lookup('file', '~/.ssh/conoha_toshlab.pub') }}"
+
+# メモリ2GBのVPSなので、スワップを2GB足しておく
+swap_size_mb: 2048
+
+php_version: "8.4"
+
+# --- toshlab ---
+app_name: toshlab
+app_domain: shuttttttto.com
+app_domains:
+  - shuttttttto.com
+  - www.shuttttttto.com
+app_dir: /var/www/toshlab
+app_repo: git@github.com:toshlab/tosh_lab.git
+app_branch: main
+
+db_name: toshlab
+db_user: toshlab
+
+# Let's Encrypt の期限切れ通知が届くメールアドレス（vault.yml で設定）
+letsencrypt_email: "{{ vault_letsencrypt_email }}"

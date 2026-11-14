@@ -1,0 +1,26 @@
+- name: nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: 既定のサイトを無効にする
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+
+- name: 共通の設定（バージョンを隠す・圧縮）
+  ansible.builtin.copy:
+    dest: /etc/nginx/conf.d/90-toshlab.conf
+    content: |
+      server_tokens off;
+      gzip_types text/css application/javascript application/json image/svg+xml;
+      client_max_body_size 10m;
+    mode: "0644"
+  notify: Reload nginx
+
+- name: nginx を起動しておく
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true

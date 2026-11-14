@@ -1,0 +1,79 @@
+# このファイルは Ansible が管理する（certbot には書き換えさせない）。
+# 証明書があるときは HTTPS で配信し、http:// と www. 付きは https://{{ app_domain }} に転送する。
+
+{% set tls = tls_cert_exists | default(false) | bool %}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ app_domains | join(' ') }};
+
+    # Let's Encrypt の確認用（証明書の取得・更新で使う）
+    location ^~ /.well-known/acme-challenge/ {
+        root {{ app_dir }}/public;
+        default_type "text/plain";
+    }
+
+{% if tls %}
+    location / {
+        return 301 https://{{ app_domain }}$request_uri;
+    }
+}
+
+# www. 付きは www 無しへ（同じページが2つあると検索エンジンに見なされないように）
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ app_domains | reject('equalto', app_domain) | join(' ') }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ app_domain }}/privkey.pem;
+
+    return 301 https://{{ app_domain }}$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ app_domain }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ app_domain }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+{% endif %}
+
+    root {{ app_dir }}/public;
+    index index.php;
+    charset utf-8;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Vite でビルドしたファイルはファイル名が毎回変わるので、長くキャッシュしてよい
+    location /build/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    location ~ ^/index\.php(/|$) {
+        fastcgi_pass unix:/run/php/php{{ php_version }}-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    # .env などの隠しファイルは見せない
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
