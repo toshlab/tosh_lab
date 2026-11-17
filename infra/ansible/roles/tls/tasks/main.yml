@@ -9,7 +9,7 @@
 - name: 証明書を取得する（すでにあれば何もしない）
   ansible.builtin.command:
     cmd: >-
-      certbot certonly --webroot --non-interactive --agree-tos
+      certbot certonly --webroot --non-interactive --agree-tos --cert-name {{ app_domain }}
       -w {{ app_dir }}/public
       -m {{ letsencrypt_email }}
       {% for d in app_domains %}-d {{ d }} {% endfor %}

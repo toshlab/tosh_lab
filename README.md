@@ -3,7 +3,7 @@
 Laravelエンジニア「tosh」のポートフォリオサイトです。
 業務システムの開発・既存システムの改修・サーバー運用・ホームページ制作のご相談を受け付けています。
 
-- サイト：https://shuttttttto.com （公開準備中）
+- サイト：https://toshlab.jp （公開準備中）
 - 相談窓口：Threads [@yuru_saka_se](https://www.threads.net/@yuru_saka_se)
 
 ## 主な機能
