@@ -52,15 +52,11 @@
   ansible.builtin.blockinfile:
     path: "/etc/letsencrypt/renewal/{{ app_domain }}.conf"
     marker: "# {mark} toshlab webroot"
-    block: |
-      [[webroot_map]]
-      {% for d in app_domains %}
-      {{ d }} = {{ app_dir }}/public
-      {% endfor %}
+    state: absent
   failed_when: false
 
 - name: 証明書を取ったので、HTTPS の設定で nginx を作り直す
-  when: certbot_issue is changed
+  when: certbot_issue is defined and certbot_issue is changed
   ansible.builtin.template:
     src: "{{ role_path }}/../app/templates/site.conf.j2"
     dest: "/etc/nginx/sites-available/{{ app_name }}.conf"

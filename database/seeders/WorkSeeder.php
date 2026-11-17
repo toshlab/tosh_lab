@@ -36,6 +36,7 @@ class WorkSeeder extends Seeder
                 'label' => 'sample',
                 'summary' => 'スクールサイトを想定して制作したオリジナルテーマ。体験申込フォーム・コース紹介・料金ページ、表示速度とSEOの基本設定まで。',
                 'tech' => ['WordPress', 'オリジナルテーマ'],
+                'github_url' => 'https://github.com/toshlab/fields-wp',
                 'sort_order' => 30,
             ],
         ];
