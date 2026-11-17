@@ -5,6 +5,8 @@
     dest: "{{ app_dir }}"
     version: "{{ app_branch }}"
     accept_hostkey: false
+    # サーバー上では手で直さない前提なので、GitHub の内容に合わせる（履歴を書き換えたときも取得できるように）
+    force: true
   become_user: "{{ deploy_user }}"
 
 - name: .env（本番用）

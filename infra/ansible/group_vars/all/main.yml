@@ -13,8 +13,10 @@ php_version: "8.4"
 
 # --- toshlab ---
 app_name: toshlab
-app_domain: shuttttttto.com
+app_domain: toshlab.jp
 app_domains:
+  - toshlab.jp
+  - www.toshlab.jp
   - shuttttttto.com
   - www.shuttttttto.com
 app_dir: /var/www/toshlab
