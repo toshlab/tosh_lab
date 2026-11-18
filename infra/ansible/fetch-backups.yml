@@ -1,0 +1,34 @@
+# サーバーにある最新のバックアップを、Mac にダウンロードする（サーバー自体が壊れたときの備え）。
+#   ansible-playbook fetch-backups.yml --ask-vault-pass
+# 保存先：~/Backups/toshlab/（iCloud の同期の外。中身はお問い合わせの個人情報を含むので、共有しない）
+- name: 最新のバックアップを Mac に取ってくる
+  hosts: web
+  become: true
+  vars:
+    local_dir: "{{ lookup('env', 'HOME') }}/Backups/toshlab"
+  tasks:
+    - name: サーバーのバックアップを探す
+      ansible.builtin.find:
+        paths: "{{ backup_dir }}/{{ item }}"
+        patterns: "*.gz"
+      loop: [db, files]
+      register: found
+
+    - name: それぞれ一番新しいものをダウンロード
+      ansible.builtin.fetch:
+        src: "{{ (item.files | sort(attribute='mtime') | last).path }}"
+        dest: "{{ local_dir }}/{{ item.item }}/"
+        flat: true
+      loop: "{{ found.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.files | length > 0
+
+    - name: Mac の保存先を自分だけが読めるようにする
+      ansible.builtin.file:
+        path: "{{ local_dir }}"
+        state: directory
+        mode: "0700"
+        recurse: true
+      delegate_to: localhost
+      become: false
