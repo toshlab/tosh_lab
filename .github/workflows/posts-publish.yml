@@ -1,0 +1,97 @@
+# ブログ記事の反映（docs/blog-import-plan.md #7）
+#
+# content/posts/ の記事のファイルが main に入ったら、取り込み専用の鍵で publisher としてサーバーに接続する。
+# サーバーの authorized_keys の restrict,command= により、接続すると取り込み（/usr/local/bin/toshlab-import-posts）
+# だけが実行される。このワークフローからはコマンドを送らない。
+#
+# 記事以外のコード・フロントのビルドはここでは扱わない（今までどおり infra/ansible の deploy.yml で手動）。
+#
+# 使う Secrets（Settings → Secrets and variables → Actions）：
+#   TOSHLAB_POSTS_SSH_KEY          取り込み専用の秘密鍵（~/.ssh/toshlab_posts_actions の中身）
+#   TOSHLAB_POSTS_SSH_HOST         サーバーの IP アドレス
+#   TOSHLAB_POSTS_SSH_KNOWN_HOSTS  サーバーのホスト鍵（known_hosts の1行。なりすましのサーバーに接続しないため）
+name: posts-publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/posts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 続けてマージされたときは、前の取り込みが終わってから次を実行する（途中で止めない）
+concurrency:
+  group: posts-publish
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: import
+    # フォークなど、ほかのリポジトリでは動かさない
+    if: github.repository == 'toshlab/tosh_lab'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Secrets が登録されているか確認
+        run: |
+          missing=""
+          [ -n "$SSH_KEY" ] || missing="$missing TOSHLAB_POSTS_SSH_KEY"
+          [ -n "$SSH_HOST" ] || missing="$missing TOSHLAB_POSTS_SSH_HOST"
+          [ -n "$SSH_KNOWN_HOSTS" ] || missing="$missing TOSHLAB_POSTS_SSH_KNOWN_HOSTS"
+          if [ -n "$missing" ]; then
+            echo "::error::次の Secrets が登録されていません：$missing"
+            exit 1
+          fi
+        env:
+          SSH_KEY: ${{ secrets.TOSHLAB_POSTS_SSH_KEY }}
+          SSH_HOST: ${{ secrets.TOSHLAB_POSTS_SSH_HOST }}
+          SSH_KNOWN_HOSTS: ${{ secrets.TOSHLAB_POSTS_SSH_KNOWN_HOSTS }}
+
+      - name: 鍵を置く（このジョブのあいだだけ）
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/toshlab_posts
+          chmod 600 ~/.ssh/toshlab_posts
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+        env:
+          SSH_KEY: ${{ secrets.TOSHLAB_POSTS_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.TOSHLAB_POSTS_SSH_KNOWN_HOSTS }}
+
+      - name: サーバーで取り込む
+        run: |
+          set +e
+          # コマンドは送らない（サーバー側で取り込みだけが実行される）。ホスト鍵が違えば接続しない
+          ssh -i ~/.ssh/toshlab_posts \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -T "publisher@${SSH_HOST}" 2>&1 | tee import.log
+          status=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "## ブログ記事の反映"
+            echo
+            echo '```'
+            # 接続先の IP アドレスは、画面に出さない
+            sed "s/${SSH_HOST}/<server>/g" import.log
+            echo '```'
+            case "$status" in
+              0) ;;
+              1) echo; echo "**スキップした記事があります。上の理由を直したプルリクエストを作ってください（ほかの記事は取り込み済みです）。**" ;;
+              *) echo; echo "**取り込みに失敗しました（終了コード $status）。**" ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+        env:
+          SSH_HOST: ${{ secrets.TOSHLAB_POSTS_SSH_HOST }}
+
+      - name: 鍵を消す
+        if: always()
+        run: rm -f ~/.ssh/toshlab_posts ~/.ssh/known_hosts

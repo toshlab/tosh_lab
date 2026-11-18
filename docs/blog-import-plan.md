@@ -85,6 +85,29 @@ status: published               # draft なら取り込むが公開しない
 - 本番は設定をキャッシュしている（`artisan optimize`）ため、取り込みのスクリプトでは `APP_CONFIG_CACHE` に存在しないパスを指定し、`LOG_CHANNEL=stderr` を効かせる（publisher は Laravel のログファイルに書き込めないため。ログは GitHub Actions の画面に出る）
 - `deploy.yml` の最後にも取り込みを実行する（スキップがあってもデプロイは止めない）
 
+## GitHub Actions（#7）
+
+| ワークフロー | いつ動くか | 何をするか | Secrets |
+|---|---|---|---|
+| `.github/workflows/posts-check.yml`（ジョブ名 `dry-run`） | `content/posts/**` を変えたプルリクエスト | このジョブの中だけの SQLite で `posts:import --dry-run`。問題のある記事があれば失敗 | 使わない |
+| `.github/workflows/posts-publish.yml`（ジョブ名 `import`） | `content/posts/**` が main に入ったとき（手動でも実行できる） | publisher の鍵でサーバーに接続 → サーバー側で取り込みだけが実行される | 下の3つ |
+
+| Secret の名前 | 入れるもの |
+|---|---|
+| `TOSHLAB_POSTS_SSH_KEY` | 取り込み専用の秘密鍵（Mac の `~/.ssh/toshlab_posts_actions` の中身すべて） |
+| `TOSHLAB_POSTS_SSH_HOST` | サーバーの IP アドレス |
+| `TOSHLAB_POSTS_SSH_KNOWN_HOSTS` | サーバーのホスト鍵（known_hosts の形の1行）。なりすましのサーバーに接続しないため |
+
+### マージする側（Claude の予約タスクなど）の決まり
+
+ブランチの保護を使えないので、マージする前に必ず次を確かめる。
+
+1. プルリクエストの `posts-check / dry-run` が **success** であること（pending・failure・skipped のときはマージしない）
+2. 変更が `content/posts/` の中だけであること（ほかのファイルを含むプルリクエストは、人が確認する）
+3. マージしたあと、`posts-publish / import` が success になったことを確かめる。failure なら、Summary の理由を直すプルリクエストを作る
+
+`posts-check` は空の DB で試すので、本番の「管理画面で作った記事との slug の重なり」までは分からない。その場合は本番の取り込みでスキップされ、`posts-publish` が失敗として通知する（管理画面の記事は上書きされない）。
+
 ## 守ること
 
 - 方針の提案 → オーナーの確認 → 実装 の順。1段階ずつ止めて報告する
