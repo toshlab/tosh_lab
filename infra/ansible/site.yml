@@ -14,3 +14,5 @@
     - tls
     - role: backup
       tags: [backup]
+    - role: posts_sync
+      tags: [posts_sync]

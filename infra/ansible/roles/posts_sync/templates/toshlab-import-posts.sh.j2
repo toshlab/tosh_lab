@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# ブログ記事の取り込み（Ansible が管理。直接書き換えない）
+#
+# GitHub Actions は、取り込み専用の鍵で {{ posts_sync_user }} として SSH 接続する。authorized_keys の
+# restrict,command= により、どんなコマンドを送ってきても、このスクリプトだけが実行される（送られたコマンドは使わない）。
+#
+#   1. 記事専用のクローン（content/posts だけ）を GitHub の main にそろえる
+#   2. php artisan posts:import で DB に取り込む
+#   3. （取り込み後に消すキャッシュは今は無い。sitemap などをキャッシュするようにしたら、ここで消す）
+#
+# 終了コード：0 = 成功 / 1 = スキップしたファイルがある（posts:import と同じ） / それ以外 = 失敗
+set -euo pipefail
+umask 022
+
+CONTENT_DIR="{{ posts_content_dir }}"
+POSTS_DIR="$CONTENT_DIR/content/posts"
+APP_DIR="{{ app_dir }}"
+
+# 2つの取り込みが同時に走らないようにする（マージが続いたとき用）。前のものが終わるまで最大2分待つ
+exec 9>"$CONTENT_DIR/.import.lock"
+if ! flock -w 120 9; then
+  echo "ほかの取り込みが終わらないため、中止しました" >&2
+  exit 75
+fi
+
+cd "$CONTENT_DIR"
+git fetch --quiet origin "{{ app_branch }}"
+# 履歴を書き換えたときもそろうように、pull ではなく GitHub の内容に合わせる（このクローンでは手で編集しない）
+git reset --hard --quiet "origin/{{ app_branch }}"
+echo "記事のファイル：$(git rev-parse --short HEAD)（$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M')）"
+
+# まだ1本も記事が無いときは、空のフォルダとして取り込む（フォルダが無いと posts:import が失敗するため）
+mkdir -p "$POSTS_DIR"
+
+cd "$APP_DIR"
+# publisher は Laravel のログファイル（deploy の持ち物）に書き込めないので、ログは標準エラーに出す。
+# 本番は設定をキャッシュしていて（artisan optimize）環境変数を読み直さないため、存在しないキャッシュの場所を
+# APP_CONFIG_CACHE に指定して、このコマンドだけ .env と環境変数から設定を読ませる
+APP_CONFIG_CACHE="$CONTENT_DIR/.no-config-cache.php" \
+LOG_CHANNEL=stderr \
+  php artisan posts:import --path="$POSTS_DIR" --no-ansi

@@ -81,3 +81,33 @@ gunzip -c /var/backups/toshlab/db/toshlab-YYYYMMDD-HHMM.sql.gz | sudo mysql tosh
 sudo tar -xzf /var/backups/toshlab/files/storage-YYYYMMDD-HHMM.tar.gz -C /var/www/toshlab/storage/app
 sudo chown -R deploy:www-data /var/www/toshlab/storage/app/public
 ```
+
+## ブログ記事の取り込み（roles/posts_sync）
+
+`content/posts/` の Markdown を、GitHub Actions からの合図でブログの記事として取り込む（計画は `docs/blog-import-plan.md`）。
+
+| もの | 内容 |
+|---|---|
+| ユーザー `publisher` | 取り込み専用。sudo なし。`.env` を読むために `www-data` のグループだけに入る |
+| `/var/www/toshlab-content` | 記事専用のクローン（`content/posts` だけの sparse checkout）。アプリのコードは取り込まない |
+| `/usr/local/bin/toshlab-import-posts` | クローンを main にそろえて `posts:import` を実行する（root の持ち物で、publisher は書き換えられない） |
+| `~publisher/.ssh/authorized_keys` | GitHub Actions の鍵1つだけ。`restrict,command="/usr/local/bin/toshlab-import-posts"` で、このスクリプトしか実行できない |
+| `~publisher/.ssh/github_content` | GitHub から記事を取得する鍵（リポジトリの読み取り専用のデプロイキーとして登録する） |
+
+初回だけ：
+
+```shell
+# Mac で、GitHub Actions が使う鍵を作る（秘密鍵は GitHub Secrets にだけ置く）
+ssh-keygen -t ed25519 -C "toshlab-posts-actions" -N "" -f ~/.ssh/toshlab_posts_actions
+
+# サーバーに反映（途中で、GitHub に登録するデプロイキーの公開鍵が表示されて止まる）
+ansible-playbook site.yml --ask-vault-pass --tags posts_sync
+```
+
+手で取り込むとき：GitHub Actions と同じ鍵で接続すると、送ったコマンドに関係なく取り込みだけが実行される。
+
+```shell
+ssh -i ~/.ssh/toshlab_posts_actions publisher@<IPアドレス>
+```
+
+`deploy.yml` を実行したときも、最後に記事を取り込み直す（スキップしたファイルがあってもデプロイは止めない）。

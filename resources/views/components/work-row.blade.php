@@ -2,16 +2,16 @@
 
 {{--
     実績の1行（モックの .wrow）。
-    行の行き先：本文がある → 詳細ページ／無ければデモ → GitHub／どれも無ければリンクにしない。
+    行の行き先：詳細ページがある（Work::hasDetailPage）→ 詳細ページ／無ければデモ → GitHub／どれも無ければリンクにしない。
 --}}
 @php
     $href = match (true) {
-        filled($work->body) => route('works.show', $work),
+        $work->hasDetailPage() => route('works.show', $work),
         filled($work->demo_url) => $work->demo_url,
         filled($work->github_url) => $work->github_url,
         default => null,
     };
-    $external = $href !== null && blank($work->body);
+    $external = $href !== null && ! $work->hasDetailPage();
     $tag = $href ? 'a' : 'div';
 @endphp
 

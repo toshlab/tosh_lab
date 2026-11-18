@@ -1,4 +1,12 @@
-<x-layouts.app :title="$post->title" :description="$post->excerptText()">
+<x-layouts.app :title="$post->title" :description="$post->excerptText()" type="article">
+@push('head')
+    <meta property="article:published_time" content="{{ $post->published_at->toIso8601String() }}">
+    <meta property="article:modified_time" content="{{ $post->updated_at->toIso8601String() }}">
+    @if ($post->category)
+        <meta property="article:section" content="{{ $post->category }}">
+    @endif
+    <script type="application/ld+json">{!! json_encode($post->structuredData(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+@endpush
 <div class="wrap">
     <article class="article mx-auto">
         <header class="page-head" data-reveal>
@@ -11,6 +19,13 @@
                 @endif
             </p>
             <h1 class="page-title">{{ $post->title }}</h1>
+            @if ($post->tags)
+                <ul class="mt-6 flex flex-wrap gap-2" aria-label="タグ">
+                    @foreach ($post->tags as $tag)
+                        <li class="badge mb-0!">#{{ $tag }}</li>
+                    @endforeach
+                </ul>
+            @endif
         </header>
 
         <div class="prose-post">

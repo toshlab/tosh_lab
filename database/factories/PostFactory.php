@@ -16,10 +16,21 @@ class PostFactory extends Factory
             'title' => fake()->sentence(),
             'slug' => fake()->unique()->slug(3),
             'category' => null,
+            'tags' => null,
             'excerpt' => null,
             'body' => fake()->paragraphs(2, true),
             'published_at' => now()->subDay(),
         ];
+    }
+
+    /** content/posts/ のファイルから取り込んだ記事 */
+    public function fromFile(?string $path = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'source' => Post::SOURCE_FILE,
+            'source_path' => $path ?? now()->format('Y-m-d').'-'.$attributes['slug'].'.md',
+            'source_hash' => hash('sha256', $attributes['body']),
+        ]);
     }
 
     public function draft(): static
