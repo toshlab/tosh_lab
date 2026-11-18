@@ -1,0 +1,81 @@
+# ブログ記事のチェック（docs/blog-import-plan.md #7）
+#
+# content/posts/ の記事のファイルを変えたプルリクエストで、取り込みを「確認だけ」（--dry-run）実行する。
+# このリポジトリは非公開・無料プランでブランチの保護を使えないので、マージする側（Claude の予約タスクなど）が、
+# このチェック（ジョブ名：dry-run）の成功を確認してからマージする。
+#
+# 秘密の値（Secrets）は使わない。DB はこのジョブの中だけの SQLite なので、本番の記事との slug の重なりまでは分からない
+# （その場合は main への反映のときに本番でスキップされ、posts-publish が失敗として通知する）。
+name: posts-check
+
+on:
+  pull_request:
+    paths:
+      - "content/posts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: posts-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dry-run:
+    name: dry-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Composer のキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: 依存パッケージ
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress
+
+      - name: アプリの準備（このジョブの中だけの SQLite）
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+          touch database/database.sqlite
+          php artisan migrate --force --no-interaction
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
+
+      - name: 取り込みの確認（--dry-run）
+        run: |
+          mkdir -p content/posts
+          set +e
+          php artisan posts:import --dry-run --path=content/posts --no-ansi 2>&1 | tee import.log
+          status=${PIPESTATUS[0]}
+          set -e
+          {
+            echo "## ブログ記事のチェック（--dry-run）"
+            echo
+            echo '```'
+            cat import.log
+            echo '```'
+            if [ "$status" -ne 0 ]; then
+              echo
+              echo "**問題のある記事があります。上の理由を直してから、もう一度 push してください。**"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ${{ github.workspace }}/database/database.sqlite
+          LOG_CHANNEL: stderr
