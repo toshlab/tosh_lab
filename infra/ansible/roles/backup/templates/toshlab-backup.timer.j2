@@ -1,0 +1,11 @@
+[Unit]
+Description=toshlab のバックアップを毎日実行する
+
+[Timer]
+OnCalendar=*-*-* {{ backup_time }}
+# サーバーが止まっていて実行できなかった日は、次に起動したときに実行する
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

@@ -12,3 +12,5 @@
     - nginx
     - app
     - tls
+    - role: backup
+      tags: [backup]

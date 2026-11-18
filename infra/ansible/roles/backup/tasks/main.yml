@@ -1,0 +1,36 @@
+# データベースとアップロードしたファイルを、毎日サーバーの中にバックアップする。
+# サーバー自体が壊れたときに備えて、ときどき fetch-backups.yml で Mac にも取っておく。
+- name: バックアップの置き場所（root だけが読める）
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: バックアップのスクリプト
+  ansible.builtin.template:
+    src: toshlab-backup.sh.j2
+    dest: /usr/local/bin/toshlab-backup
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: systemd のサービスとタイマー
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop:
+    - toshlab-backup.service
+    - toshlab-backup.timer
+  notify: Reload systemd
+
+- name: 設定の変更を systemd に読み込ませる（このあとタイマーを有効にするため、ここで実行する）
+  ansible.builtin.meta: flush_handlers
+
+- name: 毎日のタイマーを有効にする
+  ansible.builtin.systemd_service:
+    name: toshlab-backup.timer
+    enabled: true
+    state: started

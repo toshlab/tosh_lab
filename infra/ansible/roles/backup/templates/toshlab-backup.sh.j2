@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# toshlab のバックアップ（Ansible が管理。直接書き換えない）
+#   - データベース：mysqldump（root のソケット認証なので、パスワードはファイルに置かない）
+#   - アップロードしたファイル：storage/app/public（実績のサムネイルなど）
+# {{ backup_keep_days }}日より古いものは消す。systemd のタイマー（toshlab-backup.timer）から毎日実行する。
+set -euo pipefail
+umask 077
+
+DIR="{{ backup_dir }}"
+STAMP="$(date +%Y%m%d-%H%M)"
+mkdir -p "$DIR/db" "$DIR/files"
+
+# --- データベース ---
+# 一時ファイルに書いてから名前を変える（途中で失敗したとき、壊れたファイルが「最新」に見えないように）
+DB_FILE="$DIR/db/{{ db_name }}-$STAMP.sql.gz"
+mysqldump --single-transaction --quick --routines --triggers --no-tablespaces \
+  --default-character-set=utf8mb4 "{{ db_name }}" | gzip -9 > "$DB_FILE.tmp"
+gzip -t "$DB_FILE.tmp"
+mv "$DB_FILE.tmp" "$DB_FILE"
+
+# --- アップロードしたファイル ---
+FILES_FILE="$DIR/files/storage-$STAMP.tar.gz"
+tar -czf "$FILES_FILE.tmp" -C "{{ app_dir }}/storage/app" public
+gzip -t "$FILES_FILE.tmp"
+mv "$FILES_FILE.tmp" "$FILES_FILE"
+
+# --- 古いものを消す（途中で止まったときの .tmp も） ---
+find "$DIR" -type f \( -name '*.gz' -o -name '*.tmp' \) -mtime +{{ backup_keep_days }} -delete
+
+echo "backup ok: $(du -h "$DB_FILE" | cut -f1) $DB_FILE / $(du -h "$FILES_FILE" | cut -f1) $FILES_FILE"

@@ -47,3 +47,37 @@ cd infra/ansible && ansible-playbook deploy.yml --ask-vault-pass
 ssh deploy@<IPアドレス> -i ~/.ssh/conoha_toshlab
 cd /var/www/toshlab && php artisan make:filament-user
 ```
+
+## バックアップ
+
+`roles/backup` が、毎日 3:30 ごろにサーバーの中へバックアップを取る（14日分を残す）。
+
+| 内容 | 場所（サーバー） |
+|---|---|
+| データベース（mysqldump） | `/var/backups/toshlab/db/toshlab-YYYYMMDD-HHMM.sql.gz` |
+| アップロードしたファイル（`storage/app/public`） | `/var/backups/toshlab/files/storage-YYYYMMDD-HHMM.tar.gz` |
+
+サーバー自体が壊れたときに備えて、ときどき Mac に取ってくる（`~/Backups/toshlab/` に保存。お問い合わせの個人情報を含むので共有しない）：
+
+```shell
+ansible-playbook fetch-backups.yml --ask-vault-pass
+```
+
+すぐに取りたいとき・状態を見たいとき（サーバーで）：
+
+```shell
+sudo systemctl start toshlab-backup.service     # 今すぐ実行
+journalctl -u toshlab-backup.service -n 20      # 結果（「backup ok: …」が出ていれば成功）
+systemctl list-timers toshlab-backup.timer      # 次に実行される時刻
+```
+
+### 戻すとき（サーバーで）
+
+```shell
+# データベース（今の内容は上書きされる）
+gunzip -c /var/backups/toshlab/db/toshlab-YYYYMMDD-HHMM.sql.gz | sudo mysql toshlab
+
+# アップロードしたファイル
+sudo tar -xzf /var/backups/toshlab/files/storage-YYYYMMDD-HHMM.tar.gz -C /var/www/toshlab/storage/app
+sudo chown -R deploy:www-data /var/www/toshlab/storage/app/public
+```

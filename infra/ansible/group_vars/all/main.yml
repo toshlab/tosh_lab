@@ -28,3 +28,8 @@ db_user: toshlab
 
 # Let's Encrypt の期限切れ通知が届くメールアドレス（vault.yml で設定）
 letsencrypt_email: "{{ vault_letsencrypt_email }}"
+
+# --- バックアップ（roles/backup） ---
+backup_dir: /var/backups/toshlab
+backup_keep_days: 14
+backup_time: "03:30:00"

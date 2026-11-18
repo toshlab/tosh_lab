@@ -1,0 +1,9 @@
+[Unit]
+Description=toshlab のバックアップ（データベースとアップロードしたファイル）
+After=mysql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/toshlab-backup
+Nice=10
+IOSchedulingClass=idle
