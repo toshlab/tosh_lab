@@ -1,0 +1,122 @@
+# ブログ記事を GitHub の Markdown から取り込むための仕組み（docs/blog-import-plan.md #6）
+#
+# - 取り込み専用のユーザー（sudo なし）
+# - 記事専用のクローン：content/posts だけを取得する（アプリのコードは取り込まない）
+# - 取り込みのスクリプト：/usr/local/bin/toshlab-import-posts
+# - GitHub Actions からの鍵：restrict,command= で、このスクリプトしか実行できないようにする
+
+# --- 取り込み専用のユーザー ---
+# .env を読むために www-data のグループに入れる（.env は deploy:www-data の 0640）。sudo のグループには入れない
+- name: 取り込み専用のユーザー
+  ansible.builtin.user:
+    name: "{{ posts_sync_user }}"
+    shell: /bin/bash
+    groups: www-data
+    append: true
+    create_home: true
+    password: "!"
+    password_lock: true
+
+# --- GitHub から記事を取得するための鍵（読み取り専用のデプロイキーとして登録する） ---
+- name: ".ssh"
+  ansible.builtin.file:
+    path: "/home/{{ posts_sync_user }}/.ssh"
+    state: directory
+    owner: "{{ posts_sync_user }}"
+    group: "{{ posts_sync_user }}"
+    mode: "0700"
+
+- name: GitHub 用の鍵を作る
+  ansible.builtin.command:
+    cmd: "ssh-keygen -t ed25519 -N '' -C 'toshlab-posts-sync' -f /home/{{ posts_sync_user }}/.ssh/github_content"
+    creates: "/home/{{ posts_sync_user }}/.ssh/github_content"
+  become_user: "{{ posts_sync_user }}"
+
+- name: GitHub への接続にこの鍵を使う
+  ansible.builtin.copy:
+    dest: "/home/{{ posts_sync_user }}/.ssh/config"
+    content: |
+      Host github.com
+        IdentityFile ~/.ssh/github_content
+        IdentitiesOnly yes
+    owner: "{{ posts_sync_user }}"
+    group: "{{ posts_sync_user }}"
+    mode: "0600"
+
+- name: GitHub のホスト鍵を登録
+  ansible.builtin.shell: "ssh-keyscan -t ed25519 github.com >> /home/{{ posts_sync_user }}/.ssh/known_hosts"
+  args:
+    creates: "/home/{{ posts_sync_user }}/.ssh/known_hosts"
+  become_user: "{{ posts_sync_user }}"
+
+- name: 鍵の公開鍵を読む
+  ansible.builtin.slurp:
+    src: "/home/{{ posts_sync_user }}/.ssh/github_content.pub"
+  register: posts_content_key
+
+- name: GitHub に接続できるか確認
+  ansible.builtin.command: ssh -T git@github.com
+  become_user: "{{ posts_sync_user }}"
+  register: posts_github_check
+  failed_when: false
+  changed_when: false
+
+- name: 未登録なら、公開鍵を表示して一時停止
+  when: "'successfully authenticated' not in posts_github_check.stderr"
+  block:
+    - name: GitHub に登録してもらう公開鍵
+      ansible.builtin.debug:
+        msg:
+          - "GitHub の toshlab/tosh_lab → Settings → Deploy keys → Add deploy key に、次の1行を登録してください"
+          - "Title：toshlab-posts-sync / Allow write access：オフ（読み取り専用）"
+          - "{{ posts_content_key.content | b64decode | trim }}"
+
+    - name: 登録したら Enter
+      ansible.builtin.pause:
+        prompt: "上の公開鍵を Deploy keys に登録したら Enter を押してください"
+
+    - name: もう一度確認
+      ansible.builtin.command: ssh -T git@github.com
+      become_user: "{{ posts_sync_user }}"
+      register: posts_github_recheck
+      failed_when: "'successfully authenticated' not in posts_github_recheck.stderr"
+      changed_when: false
+
+# --- 記事専用のクローン（content/posts だけ） ---
+- name: 記事専用のクローンの置き場所
+  ansible.builtin.file:
+    path: "{{ posts_content_dir }}"
+    state: directory
+    owner: "{{ posts_sync_user }}"
+    group: "{{ posts_sync_user }}"
+    mode: "0755"
+
+- name: content/posts だけを取得するクローンを作る（初回だけ）
+  ansible.builtin.shell: |
+    set -e
+    git clone --quiet --filter=blob:none --no-checkout --sparse "{{ app_repo }}" .
+    git sparse-checkout set content/posts
+    git checkout --quiet "{{ app_branch }}"
+  args:
+    chdir: "{{ posts_content_dir }}"
+    creates: "{{ posts_content_dir }}/.git"
+  become_user: "{{ posts_sync_user }}"
+
+# --- 取り込みのスクリプト（root の持ち物にして、publisher からは書き換えられないようにする） ---
+- name: 取り込みのスクリプト
+  ansible.builtin.template:
+    src: toshlab-import-posts.sh.j2
+    dest: /usr/local/bin/toshlab-import-posts
+    owner: root
+    group: root
+    mode: "0755"
+
+# --- GitHub Actions からの鍵：このスクリプトしか実行できない ---
+# restrict：ポートフォワード・エージェント転送・X11 転送・端末（pty）・~/.ssh/rc をすべて無効にする（OpenSSH 7.2 以降）。
+# 念のため no-port-forwarding などの個別の指定も並べておく
+- name: GitHub Actions からの鍵を登録（ほかの鍵は消す）
+  ansible.posix.authorized_key:
+    user: "{{ posts_sync_user }}"
+    key: "{{ posts_actions_public_key }}"
+    key_options: 'restrict,command="/usr/local/bin/toshlab-import-posts",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty'
+    exclusive: true

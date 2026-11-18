@@ -9,7 +9,7 @@ class WorkController extends Controller
 {
     public function show(Work $work): View
     {
-        abort_unless($work->is_published, 404);
+        abort_unless($work->hasDetailPage(), 404);
 
         return view('works.show', ['work' => $work]);
     }

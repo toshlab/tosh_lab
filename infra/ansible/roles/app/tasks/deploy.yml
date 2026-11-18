@@ -61,6 +61,26 @@
   changed_when: true
   failed_when: artisan.rc != 0 and 'already exists' not in artisan.stdout + artisan.stderr
 
+# アプリを更新したら、記事も取り込み直す（記事の取り込みの仕組みがあるときだけ。roles/posts_sync）。
+# スキップしたファイルがあっても（終了コード 1）デプロイは止めず、結果だけを表示する
+- name: 取り込みのスクリプトがあるか確認
+  ansible.builtin.stat:
+    path: /usr/local/bin/toshlab-import-posts
+  register: import_posts_script
+
+- name: ブログ記事を取り込む
+  ansible.builtin.command: /usr/local/bin/toshlab-import-posts
+  become_user: "{{ posts_sync_user }}"
+  register: import_posts
+  when: import_posts_script.stat.exists
+  changed_when: false
+  failed_when: import_posts.rc not in [0, 1]
+
+- name: 取り込みの結果
+  ansible.builtin.debug:
+    msg: "{{ (import_posts.stdout_lines | default([])) + (import_posts.stderr_lines | default([])) }}"
+  when: import_posts_script.stat.exists
+
 # opcache.validate_timestamps = 0 なので、更新したら PHP-FPM を読み直す
 - name: PHP-FPM を読み直す
   ansible.builtin.service:

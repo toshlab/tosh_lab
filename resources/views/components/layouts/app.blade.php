@@ -3,13 +3,29 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @php
+        // 各ページから渡せる値：title・description・type（article など）・image（絶対URL）
+        $metaDescription = $description ?? config('site.description');
+        $ogImage = $image ?? asset(config('site.og_image'));
+    @endphp
     <title>{{ isset($title) ? $title.'｜'.config('site.name') : config('site.name').'｜Laravelの業務システム開発・サーバー構築' }}</title>
-    <meta name="description" content="{{ $description ?? '実務4年目のLaravelエンジニア「tosh」のポートフォリオ。Excelや手作業の業務を使いやすいシステムに。業務システム開発、既存システムの改修・移行、サーバー構築・保守、ホームページ制作のご相談を受け付けています。' }}">
+    <meta name="description" content="{{ $metaDescription }}">
     <meta property="og:site_name" content="{{ config('site.name') }}">
     <meta property="og:title" content="{{ $title ?? config('site.name') }}">
-    <meta property="og:type" content="{{ isset($title) ? 'article' : 'website' }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:type" content="{{ $type ?? 'website' }}">
     <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ $ogImage }}">
+    @if (! isset($image))
+        <meta property="og:image:width" content="{{ config('site.og_image_width') }}">
+        <meta property="og:image:height" content="{{ config('site.og_image_height') }}">
+    @endif
+    <meta property="og:locale" content="ja_JP">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="alternate" type="application/xml" title="sitemap" href="{{ route('sitemap') }}">
+    {{-- ページごとの追加（記事の JSON-LD など） --}}
+    @stack('head')
     <meta name="color-scheme" content="light dark">
 
     {{--

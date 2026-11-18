@@ -33,3 +33,9 @@ letsencrypt_email: "{{ vault_letsencrypt_email }}"
 backup_dir: /var/backups/toshlab
 backup_keep_days: 14
 backup_time: "03:30:00"
+
+# --- ブログ記事の取り込み（roles/posts_sync、docs/blog-import-plan.md） ---
+posts_sync_user: publisher
+posts_content_dir: /var/www/toshlab-content
+# GitHub Actions が使う、取り込み専用の鍵の公開鍵（Mac で作ったもの。秘密鍵は GitHub Secrets にだけ置く）
+posts_actions_public_key: "{{ lookup('file', '~/.ssh/toshlab_posts_actions.pub') }}"

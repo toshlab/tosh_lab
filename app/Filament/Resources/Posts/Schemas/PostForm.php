@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Posts\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\MarkdownEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -37,9 +39,13 @@ class PostForm
                             ->alphaDash()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
-                        TextInput::make('category')
+                        // ファイルの front matter と同じ候補から選ぶ（config/blog.php）
+                        Select::make('category')
                             ->label('カテゴリ')
-                            ->maxLength(50),
+                            ->options(fn (): array => array_combine(config('blog.categories'), config('blog.categories'))),
+                        TagsInput::make('tags')
+                            ->label('タグ')
+                            ->placeholder('RAID など'),
                         Textarea::make('excerpt')
                             ->label('抜粋（空なら本文の冒頭を使う）')
                             ->maxLength(300)
