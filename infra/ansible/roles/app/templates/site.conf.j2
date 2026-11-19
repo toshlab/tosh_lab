@@ -20,9 +20,11 @@ server {
 }
 
 # www. 付きは www 無しへ（同じページが2つあると検索エンジンに見なされないように）
+# HTTP/2 は止めている（nginx2root：CVE-2026-123007 / CVE-2026-123633）。Ubuntu の nginx に修正が
+# 届いたら http2 を戻す。同じポートの server がどれか1つでも http2 を付けると全体で有効になるので、両方から外す
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name {{ app_domains | reject('equalto', app_domain) | join(' ') }};
 
     ssl_certificate /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem;
@@ -32,8 +34,8 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name {{ app_domain }};
 
     ssl_certificate /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem;

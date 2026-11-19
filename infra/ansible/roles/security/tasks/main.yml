@@ -49,3 +49,13 @@
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
     mode: "0644"
+
+# --- 使っていないカーネルモジュールを読み込ませない ---
+# nginx2root では、nginx の脆弱性と SCTP（このサーバーでは使わない通信方式）のカーネルの不具合を組み合わせて
+# root を取られる。SCTP は使わないので、読み込めないようにしておく（読み込み済みのものは再起動で外れる）
+- name: SCTP を読み込ませない
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/toshlab-disable-sctp.conf
+    content: |
+      install sctp /bin/false
+    mode: "0644"
