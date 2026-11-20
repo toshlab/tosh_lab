@@ -23,16 +23,16 @@
     color-scheme: light;
 
     --bg: #ffffff;
-    --surface: #f4f5f4;
+    --surface: #f5f5f5;
     --ink: #0a0a0a;
     --body: #2b2b2b;
     --muted: #5c5c5c;
     --line: #e6e6e6;
     --field: #cfcfcf;
 
-    --accent: #1f5c45;
-    --accent-strong: #164634;
-    --accent-soft: #e6efeb;
+    --accent: #0a0a0a;
+    --accent-strong: #2b2b2b;
+    --accent-soft: #ececec;
     --on-accent: #ffffff;
 
     --danger: #b42318;
@@ -53,9 +53,9 @@
     --line: #2a2a2a;
     --field: #3a3a3a;
 
-    --accent: #5dbb94;
-    --accent-strong: #7fcca9;
-    --accent-soft: #15241e;
+    --accent: #ededea;
+    --accent-strong: #ffffff;
+    --accent-soft: #242424;
     --on-accent: #0e0e0e;
 
     --danger: #f97066;
@@ -75,9 +75,9 @@
         --line: #2a2a2a;
         --field: #3a3a3a;
 
-        --accent: #5dbb94;
-        --accent-strong: #7fcca9;
-        --accent-soft: #15241e;
+        --accent: #ededea;
+        --accent-strong: #ffffff;
+        --accent-soft: #242424;
         --on-accent: #0e0e0e;
 
         --danger: #f97066;
@@ -92,6 +92,8 @@
     --font-en: 'Inter', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
     /* 注記・番号・メニュー（モックの .mono） */
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* ロゴと同系統の装飾用（セクションの英字見出し）。読み込めないときは Inter */
+    --font-display: 'Bungee', 'Inter', 'Noto Sans JP', 'Hiragino Sans', sans-serif;
 
     --color-bg: var(--bg);
     --color-surface: var(--surface);
@@ -132,9 +134,6 @@
     --text-contact: clamp(3.5rem, 11vw, 11rem); /* 56 → 176px */
     --text-contact--line-height: 0.9;
     --text-contact--letter-spacing: -0.055em;
-    --text-brand: clamp(4.5rem, 15vw, 14.5rem); /* 72 → 232px */
-    --text-brand--line-height: 0.86;
-    --text-brand--letter-spacing: -0.055em;
 
     /* 余白・幅 */
     --container-content: 85rem; /* 1360px */
@@ -234,10 +233,43 @@
         padding-top: 18px;
         padding-bottom: 18px;
     }
+    /* ロゴは画像。ライト用とダーク用を並べ、テーマに合わせて片方だけ表示する（.icon-sun / .icon-moon と同じ考え方） */
     .logo {
-        font-weight: 800;
-        font-size: 15px;
-        letter-spacing: 0.08em;
+        display: inline-flex;
+        align-items: center;
+        line-height: 0;
+    }
+    .logo img {
+        height: 24px;
+        width: auto;
+    }
+    .logo-dark {
+        display: none;
+    }
+    [data-theme='dark'] .logo-light {
+        display: none;
+    }
+    [data-theme='dark'] .logo-dark {
+        display: inline-block;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) .logo-light {
+            display: none;
+        }
+        :root:not([data-theme]) .logo-dark {
+            display: inline-block;
+        }
+    }
+    .footer-logo {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 12px;
+        line-height: 0;
+        vertical-align: middle;
+    }
+    .footer-logo img {
+        height: 20px;
+        width: auto;
     }
     .site-nav {
         display: flex;
@@ -324,19 +356,18 @@
         border-radius: 50%;
         background: var(--accent);
     }
-    /* モックの h1。SEOのためh1は日本語のキャッチコピーにして、大きな名前はロゴとして表示する */
+    /* SEOのためh1は日本語のキャッチコピーにして、大きな名前はロゴ画像（1行）として表示する。ライト/ダークの出し分けは .logo-light / .logo-dark を共用 */
     .brand {
         margin: 0;
-        font-weight: 800;
-        font-size: clamp(72px, 15vw, 232px);
-        line-height: 0.86;
-        letter-spacing: -0.055em;
+        line-height: 0;
     }
-    .brand > span {
+    .brand-logo {
         display: block;
     }
-    .brand > span + span {
-        padding-left: 12%;
+    .brand-logo img {
+        width: 100%;
+        max-width: 1120px;
+        height: auto;
     }
     .hero-foot {
         display: grid;
@@ -394,10 +425,15 @@
         font-weight: inherit;
     }
     .sec-title {
-        font-size: clamp(48px, 7vw, 104px);
+        /* Bungee は Inter より幅広く字間も詰まっているため、サイズを下げて字間を解除する */
+        font-family: var(--font-display);
+        font-size: clamp(32px, 5.5vw, 80px);
         font-weight: 800;
-        letter-spacing: -0.045em;
+        letter-spacing: 0;
         line-height: 1;
+        /* Bungee は大文字の書体。擬似ボールドは防ぐ（Inter に落ちたときは 800 のまま） */
+        text-transform: uppercase;
+        font-synthesis: none;
     }
     .sec-lead {
         margin: -16px 0 40px;
@@ -682,10 +718,14 @@
     .contact-title {
         display: block;
         margin: 32px 0 0;
-        font-size: clamp(56px, 11vw, 176px);
+        /* .sec-title と同じ理由（Bungee は幅広いのでサイズ・字間・大文字・擬似ボールドを調整） */
+        font-family: var(--font-display);
+        font-size: clamp(36px, 9vw, 150px);
         font-weight: 800;
-        letter-spacing: -0.055em;
+        letter-spacing: 0;
         line-height: 0.9;
+        text-transform: uppercase;
+        font-synthesis: none;
     }
     .contact-heading {
         display: block;
@@ -754,6 +794,14 @@
     .form-input:focus {
         outline: none;
         border-bottom-color: var(--ink);
+    }
+    /* フォーム送信ボタン直前の注記（プライバシーポリシーへのリンク） */
+    .privacy-notice {
+        font-size: 13px;
+    }
+    .privacy-notice a {
+        text-decoration: underline;
+        text-underline-offset: 2px;
     }
     .form-error {
         font-size: 13px;

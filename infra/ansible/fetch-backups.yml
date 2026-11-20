@@ -1,5 +1,6 @@
 # サーバーにある最新のバックアップを、Mac にダウンロードする（サーバー自体が壊れたときの備え）。
 #   ansible-playbook fetch-backups.yml --ask-vault-pass
+# 取るたびに古い写しは消え、最新の1件だけが残る（消すのは Mac 側だけ。サーバーのバックアップには触れない）
 # 保存先：~/Backups/toshlab/（iCloud の同期の外。中身はお問い合わせの個人情報を含むので、共有しない）
 - name: 最新のバックアップを Mac に取ってくる
   hosts: web
@@ -7,6 +8,16 @@
   vars:
     local_dir: "{{ lookup('env', 'HOME') }}/Backups/toshlab"
   tasks:
+    - name: 保存先のパスが安全か確かめる（取り違えて別の場所を消さないため）
+      ansible.builtin.assert:
+        that:
+          - local_dir | length > 1
+          - local_dir != '/'
+          - local_dir.endswith('/Backups/toshlab')
+        quiet: true
+      delegate_to: localhost
+      become: false
+
     - name: サーバーのバックアップを探す
       ansible.builtin.find:
         paths: "{{ backup_dir }}/{{ item }}"
@@ -23,6 +34,7 @@
       loop_control:
         label: "{{ item.item }}"
       when: item.files | length > 0
+      register: fetched
 
     - name: Mac の保存先を自分だけが読めるようにする
       ansible.builtin.file:
@@ -30,5 +42,31 @@
         state: directory
         mode: "0700"
         recurse: true
+      delegate_to: localhost
+      become: false
+
+    - name: Mac の古い写し（今回取ったもの以外の *.gz）を探す
+      ansible.builtin.find:
+        paths: "{{ local_dir }}/{{ item.item.item }}"
+        patterns: "*.gz"
+        recurse: false
+        excludes: "{{ [(item.item.files | sort(attribute='mtime') | last).path | basename] }}"
+      loop: "{{ fetched.results }}"
+      loop_control:
+        label: "{{ item.item.item }}"
+      when:
+        - item is not skipped
+        - item is succeeded
+      register: old_copies
+      delegate_to: localhost
+      become: false
+
+    - name: Mac の古い写しを消す（今回のダウンロードが成功したぶんだけ。最新の1件は残る）
+      ansible.builtin.file:
+        path: "{{ item.1.path }}"
+        state: absent
+      loop: "{{ old_copies.results | selectattr('files', 'defined') | subelements('files') }}"
+      loop_control:
+        label: "{{ item.1.path }}"
       delegate_to: localhost
       become: false

@@ -23,6 +23,8 @@
     <meta property="og:locale" content="ja_JP">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="alternate" type="application/xml" title="sitemap" href="{{ route('sitemap') }}">
     {{-- ページごとの追加（記事の JSON-LD など） --}}
     @stack('head')
@@ -56,7 +58,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -65,7 +67,10 @@
 
     <header id="page-top" class="site-header">
         <div class="wrap header-inner">
-            <a href="{{ route('home') }}" class="logo">toshLab<span class="dot">.</span></a>
+            <a href="{{ route('home') }}" class="logo">
+                <img src="{{ asset('images/logo/toshlab-logo-1-black.svg') }}" alt="{{ config('site.name') }}" width="155" height="24" class="logo-light">
+                <img src="{{ asset('images/logo/toshlab-logo-1-white.svg') }}" alt="{{ config('site.name') }}" width="155" height="24" class="logo-dark">
+            </a>
             <nav aria-label="メインメニュー" class="site-nav mono">
                 {{-- スマホ（720px以下）では、同じメニューが下のバーにあるので文字のリンクは隠す（app.css） --}}
                 <a href="{{ route('home') }}#works" class="site-nav-link">Works</a>
@@ -95,12 +100,19 @@
 
     <footer class="site-footer">
         <div class="wrap footer-inner mono muted">
-            <span>&copy; {{ now()->year }} {{ config('site.name') }}</span>
+            <span>
+                <span class="footer-logo">
+                    <img src="{{ asset('images/logo/toshlab-logo-3-twotone.svg') }}" alt="{{ config('site.name') }}" width="129" height="20" class="logo-light">
+                    <img src="{{ asset('images/logo/toshlab-logo-3-twotone-white.svg') }}" alt="{{ config('site.name') }}" width="129" height="20" class="logo-dark">
+                </span>
+                &copy; {{ now()->year }} {{ config('site.name') }}
+            </span>
             <span class="links">
                 @if (config('site.github_url'))
                     <a href="{{ config('site.github_url') }}" rel="noopener" target="_blank">GitHub</a>
                 @endif
                 <a href="{{ config('site.threads_url') }}" rel="noopener" target="_blank">Threads</a>
+                <a href="{{ route('privacy') }}">プライバシーポリシー</a>
             </span>
             <a href="#page-top">Back to top ↑</a>
         </div>

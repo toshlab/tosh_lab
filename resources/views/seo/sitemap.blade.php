@@ -12,6 +12,9 @@
             <lastmod>{{ $posts->max('updated_at')->toAtomString() }}</lastmod>
         @endif
     </url>
+    <url>
+        <loc>{{ route('privacy') }}</loc>
+    </url>
     @foreach ($posts as $post)
         <url>
             <loc>{{ route('posts.show', $post) }}</loc>

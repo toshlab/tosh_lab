@@ -8,10 +8,12 @@
             <span class="status">初回相談 無料・24時間以内に返信</span>
         </div>
 
-        {{-- モックの大きな名前。SEOのため h1 は下のキャッチコピーにして、ここはロゴとして表示する --}}
+        {{-- 大きな名前。SEOのため h1 は下のキャッチコピーにして、ここはロゴ画像として表示する --}}
         <p class="brand" lang="en">
-            <span data-hero-line>tosh</span>
-            <span data-hero-line>Lab<span class="dot">.</span></span>
+            <span data-hero-line class="brand-logo">
+                <img src="{{ asset('images/logo/toshlab-logo-3-twotone.svg') }}" alt="{{ config('site.name') }}" width="1120" height="174" class="logo-light">
+                <img src="{{ asset('images/logo/toshlab-logo-3-twotone-white.svg') }}" alt="{{ config('site.name') }}" width="1120" height="174" class="logo-dark">
+            </span>
         </p>
 
         <div class="hero-foot">
@@ -275,8 +277,6 @@
         </h2>
         @php
             $faqs = [
-                ['サッカーと両立していて、連絡はつきますか？', '午前中は練習のため、返信は主に午後〜夜になります。いただいたご連絡には24時間以内にお返事します。'],
-                ['1週間にどれくらい作業してもらえますか？', '週8〜10時間ほど（平日19時以降・土日）です。この時間に合わせて、無理のないスケジュールをご提案します。'],
                 ['何を作りたいか、まだはっきりしていません。', '大丈夫です。今困っていることをうかがって、作るべきものを一緒に整理します。'],
                 ['遠方でも頼めますか？', 'はい。打ち合わせはすべてオンラインで行うので、全国どこからでもご依頼いただけます。'],
             ];
@@ -342,6 +342,10 @@
                 <div class="hidden" aria-hidden="true">
                     <label>空欄のままにしてください<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
                 </div>
+
+                <p class="mono muted privacy-notice">
+                    {{ __('inquiry.privacy_notice.before') }}<a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('inquiry.privacy_notice.link') }}</a>{{ __('inquiry.privacy_notice.after') }}
+                </p>
 
                 <div>
                     <button type="submit" class="mail-btn">{{ __('inquiry.submit') }} →</button>

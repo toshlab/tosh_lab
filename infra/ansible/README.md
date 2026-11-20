@@ -57,7 +57,7 @@ cd /var/www/toshlab && php artisan make:filament-user
 | データベース（mysqldump） | `/var/backups/toshlab/db/toshlab-YYYYMMDD-HHMM.sql.gz` |
 | アップロードしたファイル（`storage/app/public`） | `/var/backups/toshlab/files/storage-YYYYMMDD-HHMM.tar.gz` |
 
-サーバー自体が壊れたときに備えて、ときどき Mac に取ってくる（`~/Backups/toshlab/` に保存。お問い合わせの個人情報を含むので共有しない）：
+サーバー自体が壊れたときに備えて、ときどき Mac に取ってくる（`~/Backups/toshlab/` に保存。お問い合わせの個人情報を含むので共有しない）。取るたびに、Mac にある古い写しは自動で消え、最新の1件（db と files それぞれ）だけが残る（消すのは Mac 側だけで、サーバーのバックアップには触れない。ダウンロードに失敗したときは古い写しを消さない）：
 
 ```shell
 ansible-playbook fetch-backups.yml --ask-vault-pass
