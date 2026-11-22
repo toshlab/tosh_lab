@@ -146,7 +146,7 @@
         <div class="profile-grid">
             <div class="portrait mono muted" data-reveal>
                 @if (file_exists(public_path('images/icon.png')))
-                    <img src="{{ asset('images/icon.png') }}" alt="toshのアイコン" width="420" height="525">
+                    <img src="{{ asset('images/icon.png') }}" alt="toshLabのアイコン" width="420" height="420">
                 @else
                     <span>{{ config('site.owner.name') }} — {{ config('site.owner.role') }}</span>
                 @endif
