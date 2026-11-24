@@ -1,0 +1,11 @@
+# 在庫管理デモのコードだけを更新する（GitHub に push した内容を反映）。
+#   vendor/bin/sail npm run build          # 先に inventory-demo（Mac）でフロントをビルドする
+#   ansible-playbook deploy-inventory-demo.yml --ask-vault-pass
+- name: 在庫管理デモのデプロイ
+  hosts: web
+  become: true
+  tasks:
+    - name: デモの更新
+      ansible.builtin.include_role:
+        name: inventory_demo
+        tasks_from: deploy

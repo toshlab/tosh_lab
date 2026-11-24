@@ -1,0 +1,10 @@
+# 新しいプールを追加・変更したときは reload ではなく restart が必要
+- name: Restart php-fpm (inventory-demo)
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
+    state: restarted
+
+# 設定に誤りがあれば読み直さずに止める
+- name: Reload nginx (inventory-demo)
+  ansible.builtin.shell: nginx -t && systemctl reload nginx
+  changed_when: true

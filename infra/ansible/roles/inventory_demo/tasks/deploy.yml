@@ -1,0 +1,100 @@
+# GitHub の内容を取得して、本番用にセットアップする。何度実行してもよい。
+- name: GitHub から取得
+  ansible.builtin.git:
+    repo: "{{ demo_repo }}"
+    dest: "{{ demo_dir }}"
+    version: "{{ demo_branch }}"
+    # サーバー上では手で直さない前提なので、GitHub の内容に合わせる
+    force: true
+  become_user: "{{ deploy_user }}"
+
+# デモの PHP（demo_user）は toshlab の .env を読めない。デモの .env だけ読める
+- name: .env（本番用）
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ demo_dir }}/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ demo_user }}"
+    mode: "0640"
+
+- name: Composer で本番用のパッケージを入れる
+  ansible.builtin.command:
+    cmd: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+    chdir: "{{ demo_dir }}"
+  become_user: "{{ deploy_user }}"
+  changed_when: true
+
+# サーバーに Node.js は入れない。フロントは Mac でビルドしたものを送る
+- name: Mac にビルド済みのフロントがあるか確認
+  ansible.builtin.stat:
+    path: "{{ demo_build_src }}"
+  register: demo_build
+  delegate_to: localhost
+  become: false
+
+- name: ビルドがなければ止める
+  ansible.builtin.fail:
+    msg: "{{ demo_build_src }} がありません。inventory-demo で `vendor/bin/sail npm run build` を先に実行してください。"
+  when: not demo_build.stat.exists
+
+- name: ビルド済みのフロント（Mac の public/build）を送る
+  ansible.posix.synchronize:
+    src: "{{ demo_build_src }}"
+    dest: "{{ demo_dir }}/public/build/"
+    delete: true
+  become: false
+
+# artisan は deploy ユーザーで実行するので、実行の前後で所有者をそろえる
+# （deploy が書ける＋demo_user のグループも書ける。FPM が作ったファイルを deploy が上書きできるようにする）
+- name: storage と bootstrap/cache の権限をそろえる（artisan の前）
+  ansible.builtin.file:
+    path: "{{ demo_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ demo_user }}"
+    mode: "u=rwX,g=rwX,o=rX"
+    recurse: true
+  loop:
+    - storage
+    - bootstrap/cache
+
+- name: マイグレーション
+  ansible.builtin.command:
+    cmd: php artisan migrate --force
+    chdir: "{{ demo_dir }}"
+  become_user: "{{ deploy_user }}"
+  changed_when: true
+
+# 初回だけ。通常のデプロイでは実行しない（商品・履歴を巻き戻さないため）
+- name: デモデータを入れる（初回のみ -e demo_first_run=true）
+  ansible.builtin.command:
+    cmd: php artisan db:seed --force
+    chdir: "{{ demo_dir }}"
+  become_user: "{{ deploy_user }}"
+  when: demo_first_run | bool
+  changed_when: true
+
+- name: キャッシュを作る
+  ansible.builtin.command:
+    cmd: php artisan optimize
+    chdir: "{{ demo_dir }}"
+  become_user: "{{ deploy_user }}"
+  changed_when: true
+
+- name: storage と bootstrap/cache の権限をそろえる（artisan の後）
+  ansible.builtin.file:
+    path: "{{ demo_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ demo_user }}"
+    mode: "u=rwX,g=rwX,o=rX"
+    recurse: true
+  loop:
+    - storage
+    - bootstrap/cache
+
+# opcache.validate_timestamps = 0 なので、更新したら PHP-FPM を読み直す
+- name: PHP-FPM を読み直す
+  ansible.builtin.service:
+    name: "php{{ php_version }}-fpm"
+    state: reloaded

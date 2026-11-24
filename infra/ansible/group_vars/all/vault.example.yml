@@ -19,3 +19,7 @@ vault_mail_port: 587
 vault_mail_username: ""
 vault_mail_password: ""
 vault_mail_from_address: "you@example.com"
+
+# 在庫管理デモ（roles/inventory_demo）。APP_KEY はデモ側で `vendor/bin/sail artisan key:generate --show`
+vault_demo_app_key: "base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="
+vault_demo_db_password: "change-me-demo"

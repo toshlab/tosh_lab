@@ -1,0 +1,10 @@
+# 在庫管理デモ（https://inventory-demo.toshlab.jp）の初回構築＋デプロイ。何度実行してもよい。
+# 前提: site.yml を実行済み（php・mysql・nginx・tls が入っている）。DNS の A レコードが先に向いていること。
+#   vendor/bin/sail npm run build          # 先に inventory-demo（Mac）でフロントをビルドする
+#   ansible-playbook inventory-demo.yml --ask-vault-pass -e demo_first_run=true   # 初回（デモデータを入れる）
+#   ansible-playbook inventory-demo.yml --ask-vault-pass                          # 2回目以降
+- name: 在庫管理デモの構築
+  hosts: web
+  become: true
+  roles:
+    - inventory_demo

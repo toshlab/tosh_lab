@@ -1,0 +1,21 @@
+# 在庫管理デモ（roles/inventory_demo）。公開してよい値だけ。パスワード類は vault.yml（vault_demo_*）へ。
+demo_name: inventory-demo
+demo_domain: inventory-demo.toshlab.jp
+demo_dir: /var/www/inventory-demo
+# 公開リポジトリなので HTTPS で取得する（デプロイキーは使わない）
+demo_repo: https://github.com/toshlab/inventory-demo.git
+demo_branch: main
+
+# デモの PHP を動かす専用ユーザー（ログイン不可）。toshlab の .env を読めないようにするため分ける
+demo_user: invdemo
+
+demo_db_name: inventory_demo
+demo_db_user: inventory_demo
+
+demo_fpm_socket: "/run/php/php{{ php_version }}-fpm-inventory-demo.sock"
+
+# Mac のビルド済みフロント。toshlab と inventory-demo が同じ親フォルダにある前提の相対パス
+demo_build_src: "{{ playbook_dir }}/../../../inventory-demo/public/build/"
+
+# 初回だけ -e demo_first_run=true で db:seed を実行する（通常のデプロイでは商品・履歴を巻き戻さない）
+demo_first_run: false

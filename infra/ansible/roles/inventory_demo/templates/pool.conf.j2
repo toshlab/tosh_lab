@@ -1,0 +1,15 @@
+; Ansible が管理する。toshlab の www プールとは別のユーザー・別の socket で動かす
+[inventory-demo]
+user = {{ demo_user }}
+group = {{ demo_user }}
+listen = {{ demo_fpm_socket }}
+listen.owner = www-data
+listen.group = www-data
+listen.mode = 0660
+
+pm = ondemand
+pm.max_children = 2
+pm.process_idle_timeout = 20s
+pm.max_requests = 200
+
+php_admin_value[memory_limit] = 128M

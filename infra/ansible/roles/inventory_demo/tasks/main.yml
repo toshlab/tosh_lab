@@ -1,0 +1,106 @@
+# 在庫管理デモの構築。前提: site.yml 実行済み（php・mysql・nginx が入っている）、DNS が向いている。
+- name: デモ専用ユーザー（ログイン不可）
+  ansible.builtin.user:
+    name: "{{ demo_user }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: デモのディレクトリ
+  ansible.builtin.file:
+    path: "{{ demo_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ demo_user }}"
+    mode: "0755"
+
+# --- データベース（デモ DB だけ。toshlab の DB への権限は付けない。バックアップの対象外）---
+- name: デモ用のデータベースとユーザーを作る
+  ansible.builtin.command:
+    cmd: mysql
+    stdin: |
+      CREATE DATABASE IF NOT EXISTS `{{ demo_db_name }}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      CREATE USER IF NOT EXISTS '{{ demo_db_user }}'@'localhost' IDENTIFIED BY '{{ vault_demo_db_password }}';
+      ALTER USER '{{ demo_db_user }}'@'localhost' IDENTIFIED BY '{{ vault_demo_db_password }}';
+      GRANT ALL PRIVILEGES ON `{{ demo_db_name }}`.* TO '{{ demo_db_user }}'@'localhost';
+      FLUSH PRIVILEGES;
+  changed_when: false
+  no_log: true
+
+# --- PHP-FPM の専用プール（www プールには触れない）---
+- name: デモ用の PHP-FPM プール
+  ansible.builtin.template:
+    src: pool.conf.j2
+    dest: "/etc/php/{{ php_version }}/fpm/pool.d/inventory-demo.conf"
+    mode: "0644"
+  notify: Restart php-fpm (inventory-demo)
+
+- name: 新しいプールを有効にする（デプロイの FPM 読み直しより先）
+  ansible.builtin.meta: flush_handlers
+
+# --- コード取得・.env・composer・ビルド資産・migrate など ---
+- name: デモを配置する
+  ansible.builtin.include_tasks: deploy.yml
+
+# --- nginx（証明書がなければ HTTP だけ → certbot → HTTPS で作り直す）---
+- name: 証明書がすでにあるか確認
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ demo_domain }}/fullchain.pem"
+  register: demo_tls_cert
+
+- name: nginx のサイト設定
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: "/etc/nginx/sites-available/{{ demo_name }}.conf"
+    mode: "0644"
+  vars:
+    tls_cert_exists: "{{ demo_tls_cert.stat.exists }}"
+  notify: Reload nginx (inventory-demo)
+
+- name: サイトを有効にする
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ demo_name }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ demo_name }}.conf"
+    state: link
+  notify: Reload nginx (inventory-demo)
+
+# 証明書の確認（acme-challenge）に応答できるよう、取得の前に nginx を反映する
+- name: nginx を反映する
+  ansible.builtin.meta: flush_handlers
+
+# --- TLS（certonly --webroot。更新後の nginx 読み直しは tls ロールが置いたフックが効く）---
+- name: certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: 証明書を取得する（すでにあれば何もしない）
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --webroot --non-interactive --agree-tos --cert-name {{ demo_domain }}
+      -w {{ demo_dir }}/public
+      -m {{ letsencrypt_email }}
+      -d {{ demo_domain }}
+    creates: "/etc/letsencrypt/live/{{ demo_domain }}/fullchain.pem"
+
+- name: 証明書を確認し直す
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ demo_domain }}/fullchain.pem"
+  register: demo_tls_cert_after
+
+- name: 証明書があれば、HTTPS の設定で nginx を作り直す
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: "/etc/nginx/sites-available/{{ demo_name }}.conf"
+    mode: "0644"
+  vars:
+    tls_cert_exists: "{{ demo_tls_cert_after.stat.exists }}"
+  notify: Reload nginx (inventory-demo)
+
+# --- 毎晩の初期化（demo:reset）は、アプリ側のスケジューラが日本時間 3:00 に実行する ---
+- name: スケジューラを毎分起動する
+  ansible.builtin.cron:
+    name: "inventory-demo schedule:run"
+    user: "{{ demo_user }}"
+    minute: "*"
+    job: "cd {{ demo_dir }} && /usr/bin/php{{ php_version }} artisan schedule:run >> /dev/null 2>&1"

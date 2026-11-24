@@ -111,3 +111,37 @@ ssh -i ~/.ssh/toshlab_posts_actions publisher@<IPアドレス>
 ```
 
 `deploy.yml` を実行したときも、最後に記事を取り込み直す（スキップしたファイルがあってもデプロイは止めない）。
+
+## 在庫管理デモ（roles/inventory_demo）
+
+https://inventory-demo.toshlab.jp で公開している在庫管理デモ（GitHub の `toshlab/inventory-demo`、公開リポジトリ）。toshlab と同じ VPS に、既存のファイルを変えずに追加している。
+
+| もの | 内容 |
+|---|---|
+| `/var/www/inventory-demo` | デモのコード（HTTPS で取得。デプロイキーは不要）。所有者は `deploy` |
+| ユーザー `invdemo` | デモの PHP を動かす専用ユーザー（ログイン不可）。toshlab の `.env` を読めない |
+| PHP-FPM プール `inventory-demo` | 専用 socket、ondemand、最大2本（`www` プールとは別） |
+| DB `inventory_demo` | 専用ユーザーで、このDBだけに権限。再生成できるのでバックアップの対象外 |
+| nginx `inventory-demo.conf` | HTTP/2 は付けない（toshlab と同じ暫定措置） |
+| cron（`invdemo`） | 毎分 `schedule:run`。毎晩 3:00（日本時間）にアプリが `demo:reset` を実行する |
+
+vault.yml に追記する項目（例は `vault.example.yml`）：`vault_demo_app_key`（デモで `vendor/bin/sail artisan key:generate --show`）、`vault_demo_db_password`（長いランダムな文字列）。Let's Encrypt の通知先は既存の `vault_letsencrypt_email` を使う。
+
+初回（`site.yml` を実行済みで、`inventory-demo` の A レコードが VPS に向いていること）：
+
+```shell
+# inventory-demo（Mac）で、フロントをビルドする（toshlab と同じ親フォルダにある前提）
+vendor/bin/sail npm run build
+
+cd infra/ansible
+ansible-playbook inventory-demo.yml --ask-vault-pass -e demo_first_run=true   # 初回だけ。デモデータを入れる
+```
+
+更新するとき（コードを先に GitHub へ push してから）：
+
+```shell
+vendor/bin/sail npm run build                                  # inventory-demo で
+ansible-playbook deploy-inventory-demo.yml --ask-vault-pass    # infra/ansible で
+```
+
+`-e demo_first_run=true` を付けたときだけ `php artisan db:seed --force` を実行する。付けないと、商品や履歴は巻き戻らない。
