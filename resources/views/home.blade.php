@@ -316,8 +316,8 @@
             <form method="POST" action="{{ route('inquiries.store') }}" class="contact-form" novalidate>
                 @csrf
 
-                @if ($errors->has('website'))
-                    <p role="alert" class="form-error">{{ $errors->first('website') }}</p>
+                @if ($errors->has('website') || $errors->has('form_started_at'))
+                    <p role="alert" class="form-error">{{ $errors->first('website') ?: $errors->first('form_started_at') }}</p>
                 @endif
 
                 <label class="form-field">
@@ -338,7 +338,8 @@
                     @error('message')<span class="form-error">{{ $message }}</span>@enderror
                 </label>
 
-                {{-- スパム対策（人には見えない欄） --}}
+                {{-- スパム対策（人には見えない欄）。表示時刻を暗号化して持たせ、送信が速すぎるbotを弾く。old() では引き継がず、表示のたびに新しくする --}}
+                <input type="hidden" name="form_started_at" value="{{ \Illuminate\Support\Facades\Crypt::encryptString((string) now()->getTimestamp()) }}">
                 <div class="hidden" aria-hidden="true">
                     <label>空欄のままにしてください<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
                 </div>
