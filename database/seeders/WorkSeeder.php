@@ -6,7 +6,7 @@ use App\Models\Work;
 use Illuminate\Database\Seeder;
 
 /**
- * 公開時点の実績3件。デモURL・GitHub・画像は管理画面（/admin）から追加する。
+ * 公開時点の実績5件。本文・画像は管理画面（/admin）から追加する。
  * すでに同じslugがあれば上書きしない。
  */
 class WorkSeeder extends Seeder
@@ -28,6 +28,7 @@ class WorkSeeder extends Seeder
                 'label' => 'demo',
                 'summary' => '作業ログを入力すると、工程ごとの平均時間と商品ごとの利益を自動で集計。マクロを使わず、社内の人が直せる作り。',
                 'tech' => ['Excel', '製造業向け'],
+                'demo_url' => '/downloads/factory-visualization-demo.xlsx',
                 'sort_order' => 20,
             ],
             [
@@ -38,6 +39,24 @@ class WorkSeeder extends Seeder
                 'tech' => ['WordPress', 'オリジナルテーマ'],
                 'github_url' => 'https://github.com/toshlab/fields-wp',
                 'sort_order' => 30,
+            ],
+            [
+                'slug' => 'toshlab-site',
+                'title' => 'このサイト（toshlab.jp）の設計・構築・運用',
+                'label' => 'sample',
+                'summary' => 'Laravel で作ったこのサイトを、サーバーの構築から自動化して運用しています。ブログは GitHub に記事を置くと自動で公開される仕組みです。',
+                'tech' => ['Laravel', 'Filament', 'Ansible', 'GitHub Actions'],
+                'github_url' => 'https://github.com/toshlab/tosh_lab',
+                'demo_url' => 'https://toshlab.jp',
+                'sort_order' => 5,
+            ],
+            [
+                'slug' => 'leave-workflow-gas',
+                'title' => '休暇申請ワークフロー（Google スプレッドシート＋GAS）',
+                'label' => 'sample',
+                'summary' => 'Google のサービスだけで、休暇の申請・承認・予定の共有を仕組みにしたデモ。祝日を除いた申請期限や残日数のチェック、同時に操作されても壊れない作り。',
+                'tech' => ['Google Apps Script', 'スプレッドシート'],
+                'sort_order' => 40,
             ],
         ];
 
