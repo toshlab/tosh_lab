@@ -18,6 +18,9 @@
 <{{ $tag }} @if ($href) href="{{ $href }}" @if ($external) target="_blank" rel="noopener" @endif @endif class="wrow" data-reveal-item>
     <span class="mono muted">{{ sprintf('%02d', $number) }}</span>
     <div>
+        @if ($thumbnailUrl = $work->thumbnailUrl())
+            <img src="{{ $thumbnailUrl }}" alt="{{ $work->title }}" width="160" height="100" loading="lazy" decoding="async" class="work-thumb">
+        @endif
         <x-work-label :work="$work" />
         <h3 class="title">{{ $work->title }}</h3>
         <span class="desc muted">{{ $work->summary }}</span>

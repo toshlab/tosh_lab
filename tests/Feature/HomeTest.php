@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Post;
 use App\Models\Work;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class HomeTest extends TestCase
@@ -58,5 +59,48 @@ class HomeTest extends TestCase
         $response = $this->get('/');
 
         $this->assertCount($count, $response->viewData('posts'));
+    }
+
+    public function test_よくあるご質問が9件表示される(): void
+    {
+        $this->assertSame(9, substr_count($this->get('/')->getContent(), 'data-faq-item'));
+    }
+
+    public function test_保守プランとシステム保守が表示される(): void
+    {
+        $this->get('/')
+            ->assertSee('data-plan="light"', false)
+            ->assertSee('data-plan="standard"', false)
+            ->assertSee('data-plan="system"', false)
+            ->assertSee('ライト')
+            ->assertSee('スタンダード')
+            ->assertSee('システム保守');
+    }
+
+    public function test_相談の入口はフォームに一本化される(): void
+    {
+        $this->get('/')
+            ->assertDontSee('ThreadsのDMで相談する')
+            ->assertSee('id="contact-form"', false)
+            ->assertSee(config('site.threads_url'), false);
+    }
+
+    public function test_サムネイルがある実績は一覧に画像が出る(): void
+    {
+        Work::factory()->create(['thumbnail' => 'works/test.png']);
+
+        $this->get('/')
+            ->assertSee('<img src="'.Storage::disk('public')->url('works/test.png').'"', false)
+            ->assertSee('loading="lazy"', false);
+    }
+
+    public function test_サムネイルがない実績でもページが表示される(): void
+    {
+        Work::factory()->create(['title' => '画像なしの実績', 'thumbnail' => null]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('画像なしの実績')
+            ->assertDontSee('class="work-thumb"', false);
     }
 }

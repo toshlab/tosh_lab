@@ -504,6 +504,78 @@
         font-size: 14px;
         font-weight: 500;
     }
+    /* 実績のサムネイル（ある行だけ） */
+    .work-thumb {
+        display: block;
+        width: 160px;
+        max-width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        margin-bottom: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-photo);
+    }
+
+    /* 保守プランのカード */
+    .plans {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+    .plan {
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-photo);
+    }
+    .plan--system {
+        margin-top: 24px;
+    }
+    .plan-name {
+        font-size: 18px;
+        font-weight: 600;
+    }
+    .plan-price {
+        margin-top: 4px;
+        font-size: clamp(22px, 2.6vw, 28px);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+    }
+    .plan-for {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+    .plan-list {
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+    .plan-list li {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 8px;
+        padding: 10px 0;
+        border-top: 1px solid var(--line);
+        overflow-wrap: anywhere;
+    }
+    .plan-list small {
+        display: block;
+        font-size: 13px;
+    }
+    .plan-notes {
+        margin: 24px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+        line-height: 1.8;
+    }
+    .plan-notes li + li {
+        margin-top: 8px;
+    }
     .arrow {
         transform: rotate(-45deg);
         transition: transform 0.35s ease;
@@ -948,6 +1020,9 @@
         }
         .wrow--static {
             grid-template-columns: 40px minmax(0, 1fr);
+        }
+        .plans {
+            grid-template-columns: minmax(0, 1fr);
         }
         .wrow--post {
             grid-template-columns: minmax(0, 1fr) 28px;

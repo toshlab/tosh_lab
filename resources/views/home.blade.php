@@ -5,7 +5,7 @@
     <section id="top" class="hero">
         <div class="hero-meta mono muted" data-hero-item>
             <span>(00) — Portfolio {{ now()->year }}</span>
-            <span class="status">初回相談 無料・24時間以内に返信</span>
+            <span class="status">初回相談 無料・原則24時間以内に返信</span>
         </div>
 
         {{-- 大きな名前。SEOのため h1 は下のキャッチコピーにして、ここはロゴ画像として表示する --}}
@@ -21,8 +21,7 @@
                 <h1 class="hero-lead">Excelや手作業の業務を、<br>使いやすいシステムに。</h1>
                 <p class="hero-text muted">実務4年目のLaravelエンジニアです。在庫・受発注などの業務システムの開発から、サーバーの構築・運用、ホームページ制作まで対応します。「この作業、もっと楽にならないかな」という段階からご相談ください。</p>
                 <div class="hero-actions">
-                    <a href="{{ config('site.threads_url') }}" class="mail-btn" target="_blank" rel="noopener">ThreadsのDMで相談する →</a>
-                    <a href="#contact" class="pill-btn">フォームで相談する</a>
+                    <a href="#contact" class="mail-btn">フォームで相談する →</a>
                 </div>
             </div>
             <div class="hero-info mono muted" data-hero-item>
@@ -99,8 +98,9 @@
             $services = [
                 ['業務システム開発', '¥150,000〜', null, 'Excel・紙の管理をWeb化／要件の整理から設計・実装・テスト／管理画面付き'],
                 ['既存システムの改修・移行', 'お見積り', null, 'Laravelの機能追加・不具合対応／CakePHPなどからの移行／引継ぎ資料つき'],
-                ['保守・サーバー運用', '¥10,000〜', '/月', 'AWS・VPSの構築と運用／バックアップ／不具合対応・軽微な修正'],
+                ['保守・サーバー運用', '¥5,000〜', '/月', 'WordPressサイトの保守（ライト・スタンダード）／業務システムの保守・サーバー運用（月20,000円〜）。詳しくは下の保守プランをご覧ください'],
                 ['ホームページ・LP制作', '¥50,000〜', null, 'LP・会社やお店のサイト／お問い合わせフォーム／スマホ対応'],
+                ['修正・ちょっとした作業', '¥5,000〜', '/件', '文言の修正、画像の差し替え、表示崩れの修正など'],
             ];
         @endphp
         <div class="rows" data-reveal-group>
@@ -115,12 +115,70 @@
                 </div>
             @endforeach
         </div>
+        {{-- 保守プラン（ライト／スタンダード）。○×の記号には読み上げ用の文字を付ける --}}
+        <h3 class="sub-title" data-reveal>保守プランの内容</h3>
+        @php
+            $planRows = [
+                'WordPress 本体・プラグインの更新',
+                'バックアップ（月1回）',
+                'サイトが止まっていないかの確認',
+                '不具合が起きたときの対応',
+                '文言・画像の修正',
+                '月1回の報告（更新した内容・気づいたこと）',
+            ];
+            $plans = [
+                ['light', 'ライト', '月5,000円', '「更新は自分でできるので、壊れないように見守ってほしい」方向け', [
+                    [true, null], [true, null], [true, null],
+                    [true, '原因の調査とご報告まで（復旧は別にお見積り）'],
+                    [false, '1件5,000円〜'],
+                    [false, null],
+                ]],
+                ['standard', 'スタンダード', '月10,000円', '「文言の修正なども含めて、まるごと任せたい」方向け', [
+                    [true, null], [true, null], [true, null],
+                    [true, '調査から復旧まで'],
+                    [true, '月2回まで'],
+                    [true, null],
+                ]],
+            ];
+        @endphp
+        <div class="plans" data-reveal-group>
+            @foreach ($plans as [$key, $planName, $planPrice, $planFor, $planValues])
+                <article class="plan" data-plan="{{ $key }}" data-reveal-item>
+                    <h4 class="plan-name">{{ $planName }}</h4>
+                    <p class="plan-price">{{ $planPrice }}</p>
+                    <p class="plan-for muted">{{ $planFor }}</p>
+                    <ul class="plan-list">
+                        @foreach ($planRows as $r => $label)
+                            @php [$included, $note] = $planValues[$r]; @endphp
+                            <li>
+                                <span class="plan-mark" aria-hidden="true">{{ $included ? '○' : '×' }}</span>
+                                <span>
+                                    <span class="sr-only">{{ $included ? '含む：' : '含まない：' }}</span>{{ $label }}
+                                    @if ($note)<small class="muted">（{{ $note }}）</small>@endif
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </article>
+            @endforeach
+        </div>
+        <ul class="plan-notes muted" data-reveal>
+            <li>「修正」は、文言の変更・画像の差し替え・小さな表示崩れの修正です。ページの追加や、デザインの作り直しは別にお見積りします。</li>
+            <li>不具合の原因が外部のサービス（サーバー会社など）にある場合は、どちらのプランも連絡や調整までの対応になります。</li>
+            <li>詳しい対応の範囲は、ご契約時の取り決めによります。</li>
+        </ul>
+        <div class="plan plan--system" data-plan="system" data-reveal>
+            <h4 class="plan-name">システム保守</h4>
+            <p class="plan-price">月20,000円〜</p>
+            <p class="plan-for muted">Laravel などの業務システムの不具合対応・軽微な修正・サーバー運用。内容に合わせてお見積りします。</p>
+        </div>
+
         <p class="sec-lead muted mt-8!" data-reveal>内容をうかがってからお見積りします。お見積りまで費用はかかりません。</p>
 
         <h3 class="sub-title" data-reveal>ご相談から公開までの流れ</h3>
         @php
             $steps = [
-                ['DMかフォームで相談', '「こんな感じのものが欲しい」の一言で大丈夫です。'],
+                ['フォームで相談', '「こんな感じのものが欲しい」の一言で大丈夫です。'],
                 ['30分の無料ヒアリング', '目的・予算・時期をうかがい、必要なものを一緒に整理します。'],
                 ['お見積り・ご提案', '作るもの・金額・スケジュールを書面でお出しします。'],
                 ['制作・公開・サポート', '途中経過を共有しながら進め、公開後の更新もご相談ください。'],
@@ -279,11 +337,18 @@
             $faqs = [
                 ['何を作りたいか、まだはっきりしていません。', '大丈夫です。今困っていることをうかがって、作るべきものを一緒に整理します。'],
                 ['遠方でも頼めますか？', 'はい。打ち合わせはすべてオンラインで行うので、全国どこからでもご依頼いただけます。'],
+                ['連絡はいつ取れますか？', 'いただいたご連絡には、原則24時間以内にお返事します。オンラインの打ち合わせは、平日の夜（18時以降）や土日も対応できるので、お店の営業後やお休みの日にもご相談いただけます。公開日など急ぎの予定は、先に教えていただければ、できる限り調整します。'],
+                ['ドメインやサーバーは、だれの名義になりますか？', 'お客さまの名義で契約していただきます。設定は代わりに行うので、手続きが分からなくても大丈夫です。'],
+                ['途中で保守をやめたり、ほかの人に引き継いだりできますか？', 'できます。納品のときに、ログイン情報の管理方法や更新の手順をまとめた引き継ぎ資料をお渡しします。'],
+                ['支払い方法を教えてください。', '銀行振込です。制作は「着手時に半分・公開時に残り」、保守は月ごとの請求です。'],
+                ['秘密を守る約束（NDA）は結べますか？', 'はい、結べます。お預かりした情報は、ご依頼の作業以外には使いません。作業に AI ツールを使う場合は、事前にご相談します。'],
+                ['修正は何回までお願いできますか？', 'デザインの修正は2回まで、文言や画像の差し替えは公開までの範囲で常識的な回数で対応します。それ以上はご相談のうえで進めます。'],
+                ['公開したあとも相談できますか？', 'はい。保守プランに入っていなくても、修正1件から承ります（料金は「サービスと料金の目安」をご覧ください）。'],
             ];
         @endphp
         <div class="rows faq" data-reveal-group>
             @foreach ($faqs as $i => [$q, $a])
-                <details data-reveal-item>
+                <details data-faq-item data-reveal-item>
                     <summary>
                         <span class="mono muted">{{ sprintf('%02d', $i + 1) }}</span>
                         <span>Q. {{ $q }}</span>
@@ -303,8 +368,10 @@
             <span class="contact-heading">お気軽にご相談ください</span>
         </h2>
         <div class="contact-foot" data-reveal>
-            <p class="contact-lead muted">いちばん早いのはThreadsのDMです。内容がまとまっていなくても大丈夫です。</p>
-            <a href="{{ config('site.threads_url') }}" class="mail-btn" target="_blank" rel="noopener">ThreadsのDMで相談する →</a>
+            <p class="contact-lead muted">下のフォームからご相談ください。内容がまとまっていなくても大丈夫です。原則24時間以内にお返事します。</p>
+            @unless (session('inquiry_sent'))
+                <a href="#contact-form" class="mail-btn">フォームで相談する ↓</a>
+            @endunless
         </div>
 
         @if (session('inquiry_sent'))
@@ -313,7 +380,7 @@
                 <p class="mt-1 text-[14px]">{{ __('inquiry.sent.body') }}</p>
             </div>
         @else
-            <form method="POST" action="{{ route('inquiries.store') }}" class="contact-form" novalidate>
+            <form id="contact-form" method="POST" action="{{ route('inquiries.store') }}" class="contact-form" novalidate>
                 @csrf
 
                 @if ($errors->has('website') || $errors->has('form_started_at'))
